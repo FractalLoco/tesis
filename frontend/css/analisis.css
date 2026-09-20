@@ -1,0 +1,43 @@
+/* ===== Editor de consulta compartido (Optimización de consulta / Predicción de índice) ===== */
+.editor-sql{margin-bottom:16px}
+.editor-sql textarea{font-family:var(--mono);font-size:.86rem;resize:vertical;min-height:120px}
+.editor-barra{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.editor-estado{font-size:.82rem;color:var(--muted)}
+
+/* ===== Plan de ejecución (árbol) ===== */
+.sub-titulo{font-size:.82rem;font-weight:700;color:var(--text);margin:6px 0 8px}
+.plan-resumen{margin-bottom:18px}
+.plan-arbol{margin-bottom:8px}
+.plan-nodo{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:8px;
+  background:var(--surface);padding:10px 12px;margin-bottom:8px}
+.plan-nodo.lento{border-left-color:var(--danger)}
+.plan-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.86rem}
+.plan-tag{font-size:.7rem;font-weight:700;border-radius:6px;padding:2px 8px;background:#e5e7eb;color:#374151;white-space:nowrap}
+.plan-tag.plan-ix{background:#e0edff;color:#1d4ed8}
+.plan-tag.plan-join{background:#dcfce7;color:#166534}
+.plan-tag.plan-sort{background:#f3e8ff;color:#7e22ce}
+.plan-tag.plan-scan{background:#e5e7eb;color:#374151}
+.plan-rel{color:var(--text)}
+.plan-costo{margin-left:auto;color:var(--muted);font-size:.78rem}
+.plan-detalle{margin:8px 0 0;padding-left:2px;font-size:.8rem;color:var(--muted)}
+.plan-detalle div{margin-bottom:3px}
+.plan-detalle code{font-family:var(--mono);background:var(--surface-2);border-radius:5px;padding:1px 5px;color:var(--text)}
+.plan-hijos{margin:10px 0 0 18px;padding-left:14px;border-left:2px dashed var(--line)}
+
+/* ===== Recomendaciones ===== */
+.recom-pendiente{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.recom-fila{font-size:.86rem;margin-bottom:4px}
+.recom-lista{display:flex;flex-direction:column;gap:12px}
+.recom-item{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.recom-cab{margin-bottom:8px}
+.recom-motivos{margin:0 0 10px;padding-left:18px;font-size:.85rem;color:var(--text)}
+.recom-motivos li{margin-bottom:3px}
+
+/* ===== Historial ===== */
+.hist-cab{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px}
+.hist-cab h3{margin:0;font-size:.95rem}
+.historial-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--surface)}
+.historial-sql{font-family:var(--mono);font-size:.8rem;color:var(--text);word-break:break-word;margin-bottom:6px}
+.historial-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--muted);margin-bottom:8px}
+.historial-acciones{display:flex;gap:8px}
+.historial-acciones button{padding:5px 10px;font-size:.78rem}
