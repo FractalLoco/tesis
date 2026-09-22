@@ -26,7 +26,7 @@ jobs:
       - name: Compilar (chequeo de sintaxis)
         run: python -m compileall backend analizador
       - name: Tests
-        run: pytest -q
+        run: python -m pytest -q
 
   frontend:
     name: Frontend (JS)

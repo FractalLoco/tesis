@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.api.conexion_routes import router as conexion_router
 from backend.api.catalogo_routes import router as catalogo_router
@@ -33,6 +36,8 @@ def health():
 
     return {"status": "ok"}
 
-@app.get("/")
-def root():
-    return {"servicio": "backend de análisis", "docs": "/docs"}
+# Sirve el frontend (HTML/CSS/JS estático) desde el mismo proceso y puerto que
+# la API, para poder desplegar todo detrás de un único puerto expuesto.
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+if FRONTEND_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

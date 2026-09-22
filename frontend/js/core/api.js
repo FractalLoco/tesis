@@ -1,6 +1,8 @@
 import { obtener } from "./session.js";
 
-const BASE = "http://localhost:8000";
+// Vacío: el frontend se sirve desde el mismo proceso y puerto que la API
+// (ver backend/main.py), así que las rutas son relativas al origen actual.
+const BASE = "";
 
 async function post(ruta, body) {
   const r = await fetch(BASE + ruta, {
