@@ -1,0 +1,131 @@
+/* Dashboard claro, a una sola columna (sin barra lateral). */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;
+  background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar-brand{font-weight:700;display:flex;align-items:center;gap:10px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.conn-pill{background:var(--surface-2);border:1px solid var(--line);color:var(--muted);padding:6px 10px;border-radius:20px;font-size:.8rem}
+
+.content{max-width:1000px;margin:0 auto;padding:20px 22px calc(var(--status-h) + 20px)}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:18px;flex-wrap:wrap}
+.tab{background:transparent;color:var(--muted);border:0;border-bottom:2px solid transparent;border-radius:0;padding:9px 12px;font-weight:600}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab .lock{font-size:.72rem;color:var(--muted);margin-left:4px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.panel h2{margin:0 0 12px;font-size:1rem}
+.panel textarea{font-family:var(--mono);margin-bottom:12px}
+.buscador{margin-bottom:14px}
+
+/* ----- ACORDEÓN de tablas ----- */
+.acc-item{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;background:var(--surface);overflow:hidden}
+.acc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;cursor:pointer;user-select:none}
+.acc-head:hover{background:var(--surface-2)}
+.acc-head .nombre{font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+.acc-head .chev{transition:transform .18s ease;color:var(--muted)}
+.acc-item.open .acc-head .chev{transform:rotate(90deg)}
+.acc-head .rows{font-size:.75rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:2px 8px}
+.acc-body{display:none;border-top:1px solid var(--line);padding:12px 14px}
+.acc-item.open .acc-body{display:block}
+
+/* ----- ESTADÍSTICAS en vivo ----- */
+.stats-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 0 0 rgba(22,163,74,.5);animation:pulso 1.6s infinite}
+@keyframes pulso{0%{box-shadow:0 0 0 0 rgba(22,163,74,.45)}70%{box-shadow:0 0 0 8px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.stat-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.stat-label{font-size:.8rem;color:var(--muted);margin-bottom:6px}
+.stat-value{font-size:1.7rem;font-weight:700;color:var(--text)}
+.stat-value small{font-size:.9rem;font-weight:600;color:var(--muted)}
+
+/* ----- tablas de datos ----- */
+.tabla-wrap{overflow:auto;border:1px solid var(--line);border-radius:8px;max-height:360px;background:var(--surface)}
+table.data{border-collapse:collapse;width:100%;font-size:.85rem}
+table.data th,table.data td{border-bottom:1px solid var(--line);padding:8px 12px;text-align:left;white-space:nowrap;color:var(--text)}
+table.data thead th{position:sticky;top:0;background:var(--surface-2)}
+table.data th .coltype{display:block;font-size:.7rem;color:var(--muted);font-weight:400}
+table.data tbody tr:hover{background:var(--surface-2)}
+.empty{padding:12px;color:var(--muted);font-size:.9rem}
+.err-box{padding:12px;color:#b91c1c;background:#fef2f2;border-radius:8px;font-size:.86rem;font-family:var(--mono);white-space:pre-wrap}
+
+/* ----- estado deshabilitado (Consola / Analizar) ----- */
+.disabled-note{display:inline-block;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;font-size:.82rem;margin-bottom:12px}
+.panel.off textarea,.panel.off button{opacity:.55;pointer-events:none}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;min-height:90px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 8px;font-size:.9rem;color:var(--text)}
+.card-body{font-size:.9rem;color:var(--muted)}
+
+/* ----- barra inferior (refleja las estadísticas en vivo) ----- */
+.statusbar{position:fixed;left:0;right:0;bottom:0;height:var(--status-h);display:flex;align-items:center;gap:22px;
+  padding:0 18px;background:var(--surface);border-top:1px solid var(--line);font-size:.82rem;color:var(--muted);z-index:20}
+.statusbar b{color:var(--text);font-weight:600}
+.st-right{margin-left:auto}
+@media(max-width:720px){.results{grid-template-columns:1fr}}
+
+/* ===== Navbar estático ===== */
+.navbar{position:sticky;top:0;z-index:15;display:flex;gap:4px;align-items:center;flex-wrap:wrap;
+  background:var(--surface);border-bottom:1px solid var(--line);padding:0 16px}
+.navbar .nav-item{background:transparent;border:0;border-bottom:3px solid transparent;color:var(--text);
+  font-weight:600;font-size:.92rem;padding:14px 14px;cursor:pointer}
+.navbar .nav-item:hover{background:var(--surface-2)}
+.navbar .nav-item.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ===== Pestañas dentro de "Datos de la tabla" (Tablas | Índices) ===== */
+.pestanas{display:inline-flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:12px;padding:4px;margin-bottom:16px}
+.pestana{text-decoration:none;color:var(--muted);font-weight:600;font-size:.9rem;padding:8px 20px;border-radius:9px;
+  transition:background .15s,color .15s}
+.pestana:hover{color:var(--text)}
+.pestana.activa{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
+
+/* ===== Página 404 ===== */
+.pagina-404{text-align:center;padding:70px 20px}
+.pagina-404 .cod{font-size:5rem;font-weight:800;color:var(--accent);line-height:1}
+.pagina-404 .msg{font-size:1.1rem;font-weight:600;margin:8px 0 6px;color:var(--text)}
+.pagina-404 .sub{color:var(--muted);font-size:.92rem}
+
+/* ===== Gráfico de respuesta ===== */
+.chart-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.chart-card h3{margin:0 0 4px;font-size:.95rem}
+.chart-card .sub{color:var(--muted);font-size:.8rem;margin-bottom:10px}
+#chart-respuesta{width:100%;height:140px;display:block}
+
+/* Estado de sobrecarga (rojo) */
+.stat-value.alerta{color:var(--danger)}
+.statusbar b.alerta{color:var(--danger)}
+
+/* ===== Barra de búsqueda de tablas (destacada) ===== */
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--surface-2);
+  border:2px solid #cbd5e1;border-radius:12px;padding:6px 14px;margin-bottom:18px;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease}
+.search-bar:focus-within{border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 4px rgba(37,99,235,.15)}
+.search-bar .search-ic{width:20px;height:20px;color:var(--muted);flex:none}
+.search-bar:focus-within .search-ic{color:var(--accent)}
+.search-bar input{border:0;background:transparent;padding:9px 0;font-size:1rem;font-weight:500}
+.search-bar input::placeholder{color:var(--muted);font-weight:400}
+.search-bar input:focus{box-shadow:none;border:0}
+
+/* ===== Router: contenedor y navbar con enlaces ===== */
+.app-container{min-height:100vh}
+.navbar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:0 16px;position:sticky;top:0;z-index:15}
+.navbar .nav-brand{font-weight:700;display:flex;align-items:center;gap:8px;margin-right:14px;padding:12px 0}
+.navbar a.nav-item{text-decoration:none;color:var(--text);font-weight:600;font-size:.92rem;
+  padding:14px 13px;border-bottom:3px solid transparent}
+.navbar a.nav-item:hover{background:var(--surface-2)}
+.navbar a.nav-item.active{color:var(--accent);border-bottom-color:var(--accent)}
+.navbar .nav-refrescar{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--surface-2);
+  border:1px solid var(--line);color:var(--text);padding:7px 12px;font-size:.85rem;font-weight:600}
+.navbar .nav-refrescar:hover{background:#e8eefc;border-color:#bfd0fb;color:var(--accent)}
+.navbar .nav-refrescar svg{width:16px;height:16px}
+.navbar .nav-refrescar.girando svg{animation:girar .8s linear infinite}
+.navbar .nav-refrescar:disabled{cursor:progress;opacity:.85}
+.navbar a.nav-salir{margin-left:6px;color:#b91c1c;font-weight:600}
+.navbar a.nav-salir:hover{background:#fef2f2}
+/* Cuando el navbar está visible, el contenido interno lleva su propio padding */
+#navbar:not(.hidden) + #app{max-width:1000px;margin:0 auto;padding:20px 22px}
+#navbar:not(.hidden) + #app.ancho{max-width:1320px}
+/* Rutas de tarjeta (conexión / validando) se centran solas vía #view-login/#view-carga estilos */
+.app-container > .login-card,
+.app-container > .carga-card{margin:40px auto}

@@ -1,0 +1,84 @@
+/* ===== Módulo Diagrama de tablas (#/diagrama) ===== */
+.diag-barra{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.diag-titulo{margin:0 0 3px;font-size:1.2rem}
+.diag-barra p{margin:0}
+.diag-controles{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.zoom{display:flex;align-items:center;gap:6px}
+.zoom span{min-width:46px;text-align:center;font-size:.82rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.zoom button{padding:6px 11px}
+button.ghost.activo{background:#e8eefc;border-color:#bfd0fb;color:var(--accent)}
+
+.diag-leyenda{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-bottom:10px}
+.diag-leyenda .ley{font-size:.68rem;font-weight:800;border-radius:5px;padding:1px 6px;margin-right:4px}
+.diag-leyenda .ley.pk{background:#fef3c7;color:#b45309}
+.diag-leyenda .ley.fk{background:#e0edff;color:#2563eb}
+.ley-rel{display:inline-flex;align-items:center;gap:6px}
+.diag-info{margin:0 0 10px;min-height:1.4em;font-size:.86rem;color:var(--text)}
+.diag-info b{font-weight:700}
+
+.diag-lienzo{border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:auto;
+  min-height:280px;max-height:calc(100vh - 210px);
+  background:radial-gradient(circle,#d5deec 1px,transparent 1.2px) 0 0/22px 22px,var(--surface-2)}
+.diag-svg{display:block}
+.diag-svg text{font-family:var(--font)}
+
+/* Tablas */
+.nodo-t{cursor:pointer;transition:opacity .2s}
+.nodo-t .caja{filter:drop-shadow(0 2px 5px rgba(16,24,40,.13))}
+.nodo-t .caja{fill:#fff;stroke:#cbd5e1;stroke-width:1.2;transition:stroke .15s}
+.nodo-t:hover .caja{stroke:var(--accent)}
+.nodo-t .cab{fill:var(--accent)}
+.nodo-t .cab.aislada{fill:#64748b}
+.nodo-t .t-nombre{fill:#fff;font-size:13.5px;font-weight:700}
+.nodo-t .t-filas{fill:#dbe7ff;font-size:11px}
+.nodo-t .cab.aislada ~ .t-filas{fill:#e2e8f0}
+.nodo-t .sep{stroke:#eef1f6;stroke-width:1}
+.nodo-t .c-nom{font-size:12.5px;fill:var(--text)}
+.nodo-t .c-nom.pk{font-weight:700}
+.nodo-t .c-tipo{font-size:11px;fill:#64748b}
+.nodo-t .ins{font-size:9.5px;font-weight:800}
+.nodo-t .ins.pk{fill:#b45309}
+.nodo-t .ins.fk{fill:#2563eb}
+.grupo-etq{font-size:13px;font-weight:700;fill:#64748b}
+
+/* Relaciones */
+.arista{transition:opacity .2s}
+.arista .linea,.arista .marca{fill:none;stroke:#94a3b8;stroke-width:1.6;stroke-linecap:round;transition:stroke .15s}
+.arista .area{fill:none;stroke:transparent;stroke-width:12;pointer-events:stroke}
+.arista:hover .linea,.arista:hover .marca,.arista.rel .linea,.arista.rel .marca{stroke:var(--accent);stroke-width:2.4}
+
+/* Selección: se apaga lo que no está relacionado */
+.sel-activa .nodo-t{opacity:.28}
+.sel-activa .nodo-t.sel,.sel-activa .nodo-t.rel{opacity:1}
+.sel-activa .nodo-t.sel .caja{stroke:var(--accent);stroke-width:2.4}
+.sel-activa .arista{opacity:.12}
+.sel-activa .arista.rel{opacity:1}
+
+/* Filas cubiertas por el índice seleccionado */
+.nodo-t .fila-bg{fill:transparent;transition:fill .15s}
+.nodo-t .fila.cubierta .fila-bg{fill:#ede9fe}
+
+/* Índices: tarjetas conectadas a las columnas que cubren */
+.idx-card{transition:opacity .2s}
+.idx-card .ix-caja{fill:#faf8ff;stroke:#ddd6fe;stroke-width:1.2;transition:stroke .15s}
+.idx-card:hover .ix-caja{stroke:#8b5cf6}
+.idx-card .ix-nom{font-size:11.5px;font-weight:700;fill:#4c1d95}
+.idx-card .ix-dato{font-size:10.5px;fill:#64748b}
+.ix-b{fill:#e5e7eb}
+.ix-bt{font-size:9px;font-weight:700;fill:#374151}
+.ix-b.m-btree{fill:#dbeafe}   .ix-bt.m-btree{fill:#1d4ed8}
+.ix-b.m-gin{fill:#f3e8ff}     .ix-bt.m-gin{fill:#7e22ce}
+.ix-b.m-gist{fill:#ccfbf1}    .ix-bt.m-gist{fill:#0f766e}
+.ix-b.m-brin{fill:#ffedd5}    .ix-bt.m-brin{fill:#c2410c}
+.ix-b.pk{fill:#dcfce7}        .ix-bt.pk{fill:#166534}
+.ix-b.uq{fill:#e0edff}        .ix-bt.uq{fill:#2563eb}
+.ix-b.pa{fill:#fef3c7}        .ix-bt.pa{fill:#92400e}
+.ix-b.ex{fill:#f3e8ff}        .ix-bt.ex{fill:#7e22ce}
+.ix-b.mal{fill:#fee2e2}       .ix-bt.mal{fill:#b91c1c}
+.rail{transition:opacity .2s}
+.rail path{fill:none;stroke:#a78bfa;stroke-width:1.3;stroke-dasharray:4 3;stroke-linecap:round}
+.rail circle{fill:#8b5cf6}
+.nodo-t.tiene-ix .idx-card:not(.sel-ix),.nodo-t.tiene-ix .rail:not(.sel-ix){opacity:.25}
+.idx-card.sel-ix .ix-caja{stroke:#7c3aed;stroke-width:2}
+.rail.sel-ix path{stroke:#7c3aed;stroke-width:2;stroke-dasharray:none}
+.rail.sel-ix circle{fill:#7c3aed}

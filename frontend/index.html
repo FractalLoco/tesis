@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Optimizador SQL con Machine Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/indices.css" />
+  <link rel="stylesheet" href="css/diagrama.css" />
+  <link rel="stylesheet" href="css/analisis.css" />
+</head>
+<body>
+  <!-- Navbar: se muestra solo en las rutas internas. Cada enlace es una ruta. -->
+  <nav id="navbar" class="navbar hidden">
+    <span class="nav-brand"><span class="logo sm">ML·SQL</span> Optimizador SQL</span>
+    <a class="nav-item" href="#/tablas">Datos de la tabla</a>
+    <a class="nav-item" href="#/estadisticas">Estadísticas SQL</a>
+    <a class="nav-item" href="#/diagrama">Diagrama de tablas</a>
+    <a class="nav-item" href="#/optimizacion">Optimización de consulta</a>
+    <a class="nav-item" href="#/prediccion">Predicción de índice</a>
+    <button id="btn-refrescar" class="nav-refrescar" type="button" title="Volver a cargar los datos de esta sección">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+      <span>Refrescar</span>
+    </button>
+    <a id="nav-salir" class="nav-item nav-salir" href="#/conexion">Salir de la base de datos</a>
+  </nav>
+
+  <!-- Contenedor único: el router pinta aquí la ruta actual -->
+  <main id="app" class="app-container"></main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
