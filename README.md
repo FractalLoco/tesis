@@ -40,6 +40,15 @@ optimizacion-sql-ml/
 - **`docs/`** — documentación, incluida la propuesta de titulación.
 - **`.github/`** — flujo de integración continua (CI).
 
+## Configuración (.env)
+
+El proyecto incluye un archivo `.env.example`. Para que funcione, cópialo como
+`.env` y cambia las credenciales por las de tu base de datos:
+
+```bash
+cp .env.example .env
+```
+
 ## Licencia
 
 Distribuido bajo licencia **MIT**. Ver el archivo [`LICENSE`](LICENSE).
