@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from backend.config import CORS_ORIGINS
 from backend.api.conexion_routes import router as conexion_router
 from backend.api.catalogo_routes import router as catalogo_router
 from backend.api.consola_routes import router as consola_router
@@ -17,9 +18,9 @@ app = FastAPI(title="Optimizador SQL con ML — Backend de análisis")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 app.include_router(conexion_router, tags=["conexion"])
