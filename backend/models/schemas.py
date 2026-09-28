@@ -1,9 +1,11 @@
 from pydantic import BaseModel
 
+from backend.config import DB_HOST, DB_PORT
+
 class Conexion(BaseModel):
 
-    host: str = "localhost"
-    port: str = "5432"
+    host: str = DB_HOST
+    port: str = DB_PORT
     dbname: str
     user: str
     password: str = ""
