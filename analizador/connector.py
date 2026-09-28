@@ -1,16 +1,14 @@
-import os
 import psycopg
-from dotenv import load_dotenv
 
-load_dotenv()
+from backend.config import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
 
 def get_db_config(overrides: dict | None = None) -> dict:
     cfg = {
-        "host": os.getenv("DB_HOST", "localhost"),
-        "port": os.getenv("DB_PORT", "5432"),
-        "dbname": os.getenv("DB_NAME", "optimizacion"),
-        "user": os.getenv("DB_USER", "analizador_ro"),
-        "password": os.getenv("DB_PASSWORD", ""),
+        "host": DB_HOST,
+        "port": DB_PORT,
+        "dbname": DB_NAME,
+        "user": DB_USER,
+        "password": DB_PASSWORD,
     }
     if overrides:
         cfg.update({k: v for k, v in overrides.items() if v not in (None, "")})
