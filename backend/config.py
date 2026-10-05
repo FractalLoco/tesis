@@ -15,6 +15,10 @@ DB_NAME = os.getenv("DB_NAME", "optimizacion")
 DB_USER = os.getenv("DB_USER", "analizador_ro")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 
+# Segundos máximos de espera al abrir la conexión con PostgreSQL. Sin esto, un
+# host que no responde deja la petición colgada indefinidamente.
+DB_CONNECT_TIMEOUT = int(os.getenv("DB_CONNECT_TIMEOUT", "10"))
+
 # Orígenes permitidos por CORS, separados por coma.
 CORS_ORIGINS = [
     o.strip()
