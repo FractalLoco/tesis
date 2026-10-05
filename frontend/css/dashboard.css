@@ -30,6 +30,7 @@
 
 /* ----- ESTADÍSTICAS en vivo ----- */
 .stats-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+#stats-error .err-box{margin-bottom:14px}
 .live-dot{width:9px;height:9px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 0 0 rgba(22,163,74,.5);animation:pulso 1.6s infinite}
 @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(22,163,74,.45)}70%{box-shadow:0 0 0 8px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}

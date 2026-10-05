@@ -26,9 +26,18 @@ export function cleanup() { vigencia++; }
 
 async function cargar(token) {
   try {
-    if (esDemo()) throw new Error("demo");
-    tablas = (await api.listarTablas()).tablas || [];
-  } catch { tablas = tablasDemo(); }
+    tablas = esDemo() ? tablasDemo() : (await api.listarTablas()).tablas || [];
+  } catch (err) {
+    // Sin datos de ejemplo de respaldo: si la base falla, se muestra el error real.
+    if (token !== vigencia) return;
+    $("acordeon-tablas").innerHTML =
+      `${cajaError(err)}<p><button id="tablas-reintentar" class="ghost">Reintentar</button></p>`;
+    $("tablas-reintentar").onclick = () => {
+      $("acordeon-tablas").innerHTML = '<div class="empty">Cargando…</div>';
+      cargar(token);
+    };
+    return;
+  }
   if (token === vigencia) pintar("");
 }
 
