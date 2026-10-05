@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from backend.models.schemas import Conexion
-from backend.services.orchestrator import probar_conexion
+from backend.services.conexion import probar_conexion
 
 router = APIRouter()
 

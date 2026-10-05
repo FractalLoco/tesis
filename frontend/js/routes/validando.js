@@ -23,6 +23,8 @@ function pasos(resumen) {
       run: async () => {
         const r = await api.conectar(session.obtener());
         resumen.version = (String(r.version).match(/PostgreSQL [\d.]+/) || ["PostgreSQL"])[0];
+        resumen.soloLectura = r.usuario_solo_lectura;
+        resumen.advertencias = r.advertencias || [];
         return resumen.version;
       } },
     { id: "tablas", label: "Lectura del catálogo de tablas", min: 1400,
@@ -195,14 +197,19 @@ async function confirmar(resumen, dbname, vivo) {
   $("carga-titulo").textContent = "¡Conexión establecida!";
   $("carga-sub").textContent = `Tu base de datos «${dbname}» está lista para analizar.`;
   const chips = [resumen.version, plural(resumen.tablas, "tabla", "tablas"),
-    plural(resumen.indices, "índice", "índices"), plural(resumen.relaciones, "relación", "relaciones"),
-    "Solo lectura"];
+    plural(resumen.indices, "índice", "índices"), plural(resumen.relaciones, "relación", "relaciones")];
+  // El chip de seguridad refleja los permisos reales del usuario, no se asume.
+  const seguridad = resumen.soloLectura
+    ? "<span>Usuario de solo lectura</span>"
+    : '<span class="aviso">Usuario con permisos de escritura</span>';
+  const avisos = (resumen.advertencias || []).map((a) => `<p class="final-aviso">${esc(a)}</p>`).join("");
   $("carga-final").innerHTML =
     `<svg class="final-check" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23"/><path d="M15 27l8 8 15-17"/></svg>
-     <div class="final-chips">${chips.map((c) => `<span>${esc(c)}</span>`).join("")}</div>`;
+     <div class="final-chips">${chips.map((c) => `<span>${esc(c)}</span>`).join("")}${seguridad}</div>${avisos}`;
   $("carga-final").classList.add("mostrar");
 
-  await esperar(PAUSA_FINAL_MS);
+  // Con advertencias se deja más tiempo para leerlas antes de abrir el panel.
+  await esperar(avisos ? PAUSA_FINAL_MS + 4000 : PAUSA_FINAL_MS);
   if (!vivo()) return;
   $("carga-sub").textContent = "Abriendo el panel…";
   $("carga-card").classList.add("saliendo");
