@@ -1,8 +1,8 @@
 import { obtener } from "./session.js";
 
-// Vacío: el frontend se sirve desde el mismo proceso y puerto que la API
-// (ver backend/main.py), así que las rutas son relativas al origen actual.
-const BASE = "";
+// El frontend se sirve desde el mismo proceso y puerto que la API (ver
+// backend/main.py); todas las rutas de la API cuelgan de /api.
+const BASE = "/api";
 
 async function post(ruta, body) {
   const r = await fetch(BASE + ruta, {
@@ -31,7 +31,7 @@ export const obtenerDiagrama = () => post("/diagrama", { conexion: obtener() });
 export const predecirIndices = (query) => post("/prediccion-indices", { conexion: obtener(), query });
 
 export async function health() {
-  const r = await fetch(BASE + "/health");
+  const r = await fetch("/health");
   if (!r.ok) throw new Error("El backend respondió con error " + r.status);
   return r.json();
 }
