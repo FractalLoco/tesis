@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from analizador.recomendador import recomendar_indices
 from backend.models.schemas import PrediccionIn
+from backend.services.analisis import recomendar_indices
 
 router = APIRouter()
 
