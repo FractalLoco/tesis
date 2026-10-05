@@ -1,7 +1,7 @@
 import * as api from "../core/api.js";
 import { esDemo } from "../core/session.js";
 import { estadisticasDemo } from "../core/demo.js";
-import { $ } from "../core/util.js";
+import { $, cajaError } from "../core/util.js";
 
 let timer = null;
 const CADA_MS = 3000, UMBRAL_MS = 50, MAX = 40;
@@ -10,6 +10,7 @@ const historial = [];
 export function render(app) {
   app.innerHTML = `
     <div class="stats-head"><span class="live-dot"></span><b>Monitoreo en vivo</b> <span class="muted mini">actualizando cada 3 s</span></div>
+    <div id="stats-error"></div>
     <div class="chart-card"><h3>Tiempo de respuesta</h3><div class="sub">últimas mediciones (ms)</div><canvas id="chart-respuesta"></canvas></div>
     <div id="stats-grid" class="stats-grid"></div>`;
   historial.length = 0;
@@ -22,7 +23,14 @@ export function cleanup() { if (timer) { clearInterval(timer); timer = null; } }
 async function tick() {
   let d;
   try { d = esDemo() ? estadisticasDemo() : await api.estadisticas(); }
-  catch { d = estadisticasDemo(); }
+  catch (err) {
+    // Se muestra el error real (sin datos de ejemplo) y se reintenta en el próximo ciclo.
+    const caja = $("stats-error");
+    if (caja) caja.innerHTML = cajaError(err);
+    return;
+  }
+  const caja = $("stats-error");
+  if (caja) caja.innerHTML = "";
   const alerta = d.tiempo_respuesta_ms > UMBRAL_MS;
   historial.push(d.tiempo_respuesta_ms);
   if (historial.length > MAX) historial.shift();

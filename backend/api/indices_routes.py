@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from analizador.indices import listar_todos_indices
 from backend.models.schemas import ConexionBody
+from backend.services.catalogo import listar_todos_indices
 
 router = APIRouter()
 

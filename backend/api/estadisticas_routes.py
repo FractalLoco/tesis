@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from analizador.estadisticas import obtener_estadisticas
 from backend.models.schemas import ConexionBody
+from backend.services.catalogo import obtener_estadisticas
 
 router = APIRouter()
 

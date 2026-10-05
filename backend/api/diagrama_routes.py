@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from analizador.diagrama import obtener_diagrama
 from backend.models.schemas import ConexionBody
+from backend.services.catalogo import obtener_diagrama
 
 router = APIRouter()
 

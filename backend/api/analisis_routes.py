@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from backend.models.schemas import AnalizarIn
-from backend.services.orchestrator import analizar_consulta
+from backend.services.analisis import analizar_consulta
 
 router = APIRouter()
 

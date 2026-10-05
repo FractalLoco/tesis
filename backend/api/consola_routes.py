@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from analizador.consola import ejecutar_consulta
 from backend.models.schemas import ConsultaSQL
+from backend.services.consola import ejecutar_consulta
 
 router = APIRouter()
 
