@@ -1,7 +1,7 @@
 import * as api from "../core/api.js";
 import * as session from "../core/session.js";
 import { irA } from "../core/router.js";
-import { $, esc, esperar } from "../core/util.js";
+import { $, cajaError, esc, esperar } from "../core/util.js";
 
 const ICONO_OK = '<svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>';
 const ICONO_ERR = '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>';
@@ -228,7 +228,7 @@ function fallo(paso, err) {
   };
   $("carga-error").innerHTML =
     `<div class="err-title">Falló: ${esc(paso.label)}</div>
-     <div class="err-detail">${esc(err.message)}</div>
+     ${cajaError(err)}
      <div class="err-hint">${pistas[paso.id] || ""}</div>`;
   $("carga-acciones").innerHTML =
     `<button id="btn-reintentar">Reintentar</button>

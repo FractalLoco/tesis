@@ -2,7 +2,7 @@ import * as api from "../core/api.js";
 import { obtener as sesionActual, esDemo } from "../core/session.js";
 import { prediccionDemo } from "../core/demo.js";
 import * as historial from "../core/historial.js";
-import { $, esc } from "../core/util.js";
+import { $, cajaError, esc } from "../core/util.js";
 
 const TIPO = "prediccion";
 const EJEMPLO = "SELECT p.id, c.nombre, p.total\nFROM pedidos p\nJOIN clientes c ON c.id = p.cliente_id\nWHERE p.estado = 'pendiente'\nORDER BY p.fecha DESC\nLIMIT 50;";
@@ -47,7 +47,7 @@ export function cleanup() { vigencia++; }
 
 async function ejecutar() {
   const sql = $("pi-sql").value.trim();
-  if (!sql) { $("pi-error").innerHTML = `<div class="err-box">Escribe una consulta primero.</div>`; return; }
+  if (!sql) { $("pi-error").innerHTML = cajaError("Escribe una consulta primero."); return; }
   const token = vigencia;
   const boton = $("pi-ejecutar");
   boton.disabled = true;
@@ -61,7 +61,7 @@ async function ejecutar() {
     pintarHistorial();
   } catch (err) {
     if (token !== vigencia) return;
-    $("pi-error").innerHTML = `<div class="err-box">${esc(err.message)}</div>`;
+    $("pi-error").innerHTML = cajaError(err);
     $("pi-resultado").innerHTML = "";
   } finally {
     if (token === vigencia) { boton.disabled = false; $("pi-estado").textContent = ""; }

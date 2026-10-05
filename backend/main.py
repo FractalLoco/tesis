@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.api import api_router
 from backend.config import CORS_ORIGINS
+from backend.errores import registrar_manejadores
 
 app = FastAPI(title="Optimizador SQL con ML — Backend de análisis")
 
@@ -17,6 +18,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+registrar_manejadores(app)
 
 @app.get("/health")
 def health():

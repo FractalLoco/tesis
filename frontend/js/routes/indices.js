@@ -1,7 +1,7 @@
 import * as api from "../core/api.js";
 import { esDemo } from "../core/session.js";
 import { indicesDemo } from "../core/demo.js";
-import { $, esc, formatoBytes } from "../core/util.js";
+import { $, cajaError, esc, formatoBytes } from "../core/util.js";
 import { sinUso, nMetodo, explicar } from "../core/indices-info.js";
 import { pestanasDatos } from "../core/pestanas.js";
 
@@ -46,7 +46,7 @@ async function cargar() {
     todos = esDemo() ? indicesDemo() : (await api.listarIndices()).indices || [];
   } catch (err) {
     $("idx-contenido").innerHTML =
-      `<div class="err-box">${esc(err.message)}</div><p><button id="idx-reintentar" class="ghost">Reintentar</button></p>`;
+      `${cajaError(err)}<p><button id="idx-reintentar" class="ghost">Reintentar</button></p>`;
     $("idx-reintentar").onclick = async () => { $("idx-contenido").innerHTML = '<div class="empty">Cargando índices…</div>'; await cargar(); };
     return;
   }

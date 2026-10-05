@@ -1,13 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
-from backend.models.schemas import ConexionBody
 from analizador.diagrama import obtener_diagrama
+from backend.models.schemas import ConexionBody
 
 router = APIRouter()
 
 @router.post("/diagrama")
 def diagrama(body: ConexionBody):
-    try:
-        return obtener_diagrama(body.conexion.model_dump())
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"No se pudo obtener el diagrama: {e}")
+    return obtener_diagrama(body.conexion.model_dump())

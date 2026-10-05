@@ -1,6 +1,13 @@
 import psycopg
 
-from backend.config import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
+from backend.config import (
+    DB_CONNECT_TIMEOUT,
+    DB_HOST,
+    DB_NAME,
+    DB_PASSWORD,
+    DB_PORT,
+    DB_USER,
+)
 
 def get_db_config(overrides: dict | None = None) -> dict:
     cfg = {
@@ -15,7 +22,7 @@ def get_db_config(overrides: dict | None = None) -> dict:
     return cfg
 
 def get_readonly_connection(config: dict | None = None) -> psycopg.Connection:
-    conn = psycopg.connect(**get_db_config(config))
+    conn = psycopg.connect(**get_db_config(config), connect_timeout=DB_CONNECT_TIMEOUT)
     with conn.cursor() as cur:
         cur.execute("SET default_transaction_read_only = on;")
     return conn

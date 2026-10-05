@@ -121,8 +121,7 @@
 /* Errores */
 .carga-error{margin-top:14px}
 .carga-error .err-title{color:var(--danger);font-weight:700;font-size:.92rem}
-.carga-error .err-detail{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;
-  padding:10px;margin:8px 0;font-family:var(--mono);font-size:.82rem;color:#b91c1c;white-space:pre-wrap}
+.carga-error .err-box{margin:8px 0}
 .carga-error .err-hint{color:var(--muted);font-size:.85rem}
 .carga-error code{background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:.82rem}
 .carga-acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}

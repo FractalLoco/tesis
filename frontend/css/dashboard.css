@@ -46,7 +46,10 @@ table.data thead th{position:sticky;top:0;background:var(--surface-2)}
 table.data th .coltype{display:block;font-size:.7rem;color:var(--muted);font-weight:400}
 table.data tbody tr:hover{background:var(--surface-2)}
 .empty{padding:12px;color:var(--muted);font-size:.9rem}
-.err-box{padding:12px;color:#b91c1c;background:#fef2f2;border-radius:8px;font-size:.86rem;font-family:var(--mono);white-space:pre-wrap}
+.err-box{padding:12px;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:.88rem;line-height:1.45}
+.err-mas{margin-top:8px;color:var(--muted);font-size:.8rem}
+.err-mas summary{cursor:pointer;user-select:none}
+.err-mas pre{margin:6px 0 0;padding:8px;background:#fff;border:1px solid var(--line);border-radius:6px;font-family:var(--mono);white-space:pre-wrap;word-break:break-word}
 
 /* ----- estado deshabilitado (Consola / Analizar) ----- */
 .disabled-note{display:inline-block;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;font-size:.82rem;margin-bottom:12px}
