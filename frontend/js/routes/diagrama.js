@@ -2,7 +2,7 @@ import * as api from "../core/api.js";
 import { esDemo } from "../core/session.js";
 import { diagramaDemo, indicesDemo } from "../core/demo.js";
 import { nMetodo, explicar } from "../core/indices-info.js";
-import { $, esc, formatoBytes } from "../core/util.js";
+import { $, cajaError, esc, formatoBytes } from "../core/util.js";
 
 const CAB = 38, FILA = 25, PIE = 8, MARGEN = 56, SEP_X = 150, SEP_Y = 34;
 const IX_H = 58, IX_GAP = 8, IX_TOP = 18, IX_INDENT = 22;
@@ -86,7 +86,7 @@ export async function render(app) {
   } catch (err) {
     $("diag-resumen").textContent = "No se pudo cargar el diagrama.";
     $("diag-lienzo").innerHTML =
-      `<div class="err-box">${esc(err.message)}</div><p style="padding:0 12px"><button id="diag-reintentar" class="ghost">Reintentar</button></p>`;
+      `${cajaError(err)}<p style="padding:0 12px"><button id="diag-reintentar" class="ghost">Reintentar</button></p>`;
     $("diag-reintentar").onclick = () => render(app);
     return;
   }

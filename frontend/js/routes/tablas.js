@@ -1,7 +1,7 @@
 import * as api from "../core/api.js";
 import { esDemo } from "../core/session.js";
 import { tablasDemo, datosTablaDemo } from "../core/demo.js";
-import { $, esc } from "../core/util.js";
+import { $, cajaError, esc } from "../core/util.js";
 import { pestanasDatos } from "../core/pestanas.js";
 
 let tablas = [];
@@ -61,7 +61,7 @@ async function toggle(item) {
     if (token !== vigencia) return;
     body.innerHTML = tablaHTML(esquema, tabla, data);
     item.dataset.cargado = "1";
-  } catch (err) { if (token === vigencia) body.innerHTML = `<div class="err-box">${esc(err.message)}</div>`; }
+  } catch (err) { if (token === vigencia) body.innerHTML = cajaError(err); }
 }
 
 function tablaHTML(esquema, tabla, data) {
