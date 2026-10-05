@@ -106,6 +106,22 @@ def _campo(loc) -> str:
     # ("body", "conexion", "dbname") -> "conexion.dbname"
     return ".".join(str(p) for p in loc if p != "body")
 
+def _explicar(e: dict) -> str:
+    """Traduce al español los errores de validación más comunes de Pydantic."""
+    ctx = e.get("ctx") or {}
+    textos = {
+        "missing": "es obligatorio",
+        "string_too_short": "no puede estar vacío",
+        "string_too_long": f"admite como máximo {ctx.get('max_length')} caracteres",
+        "greater_than_equal": f"debe ser mayor o igual a {ctx.get('ge')}",
+        "less_than_equal": f"debe ser menor o igual a {ctx.get('le')}",
+        "int_parsing": "debe ser un número entero",
+        "int_type": "debe ser un número entero",
+    }
+    if e.get("type") in textos:
+        return textos[e["type"]]
+    return str(e.get("msg", "")).removeprefix("Value error, ")
+
 def registrar_manejadores(app: FastAPI) -> None:
 
     @app.exception_handler(ErrorNegocio)
@@ -119,15 +135,15 @@ def registrar_manejadores(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def _validacion(_: Request, exc: RequestValidationError):
-        faltan = [_campo(e["loc"]) for e in exc.errors() if e.get("type") == "missing"]
+        errores = exc.errors()
+        faltan = [_campo(e["loc"]) for e in errores if e.get("type") == "missing"]
         if faltan:
             mensaje = "Faltan datos obligatorios: " + ", ".join(faltan) + "."
+        elif len(errores) == 1:
+            mensaje = f"El dato «{_campo(errores[0]['loc'])}» {_explicar(errores[0])}."
         else:
             mensaje = "Algunos datos enviados no tienen un formato válido."
-        detalle = "\n".join(
-            f"{_campo(e['loc'])}: " + ("es obligatorio" if e.get("type") == "missing" else e["msg"])
-            for e in exc.errors()
-        )
+        detalle = "\n".join(f"{_campo(e['loc'])}: {_explicar(e)}" for e in errores)
         return respuesta(422, "datos_invalidos", mensaje, detalle)
 
     @app.exception_handler(StarletteHTTPException)
