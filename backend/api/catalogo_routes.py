@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from analizador.catalogo import listar_tablas, preview_tabla
 from backend.models.schemas import ConexionBody, PreviewIn
+from backend.services.catalogo import listar_tablas, preview_tabla
 
 router = APIRouter()
 
