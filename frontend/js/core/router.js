@@ -27,19 +27,30 @@ const RUTAS = {
 
 let rutaActual = null;
 
-export function irA(ruta) { window.location.hash = "#" + ruta; }
+// Navegación con la History API: la URL queda limpia (/tablas, /diagrama...),
+// sin "#". El backend devuelve index.html para estas rutas (ver backend/main.py),
+// así que también se pueden refrescar o abrir directamente.
+// "reemplazar" se usa en las redirecciones, para no dejar entradas que el botón
+// Atrás volvería a redirigir.
+export function irA(ruta, { reemplazar = false } = {}) {
+  if (window.location.pathname !== ruta) {
+    history[reemplazar ? "replaceState" : "pushState"](null, "", ruta);
+  }
+  render();
+}
 
-function rutaDesdeHash() {
-  const h = window.location.hash.replace(/^#/, "");
-  return h && RUTAS[h] ? h : (session.estaConectado() ? "/tablas" : "/conexion");
+function rutaActualUrl() {
+  const p = window.location.pathname;
+  return RUTAS[p] ? p : (session.estaConectado() ? "/tablas" : "/conexion");
 }
 
 async function render() {
-  const ruta = rutaDesdeHash();
+  const ruta = rutaActualUrl();
+  if (ruta !== window.location.pathname) return irA(ruta, { reemplazar: true });
   const def = RUTAS[ruta];
 
   if (def.requiereConexion && !session.estaConectado()) {
-    return irA("/conexion");
+    return irA("/conexion", { reemplazar: true });
   }
 
   // rutaActual se actualiza ANTES de esperar a que la ruta cargue sus datos:
@@ -63,7 +74,7 @@ function pintarNavbar(def, ruta) {
   nav.classList.remove("hidden");
   const activa = def.navActivo || ruta;
   nav.querySelectorAll("a.nav-item").forEach((a) =>
-    a.classList.toggle("active", a.getAttribute("href") === "#" + activa));
+    a.classList.toggle("active", a.getAttribute("href") === activa));
 }
 
 async function refrescar() {
@@ -75,8 +86,24 @@ async function refrescar() {
   btn.disabled = false;
 }
 
+// Los enlaces internos (<a href="/tablas">) navegan sin recargar la página.
+// Ctrl/Cmd + clic o clic central siguen abriendo una pestaña nueva.
+function interceptarEnlaces(e) {
+  const a = e.target.closest("a[href^='/']");
+  if (!a || a.target || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+  const ruta = a.getAttribute("href");
+  if (!RUTAS[ruta]) return;
+  e.preventDefault();
+  irA(ruta);
+}
+
 export function iniciarRouter() {
-  window.addEventListener("hashchange", render);
+  // Enlaces antiguos con "#/ruta" se convierten a la ruta limpia.
+  if (window.location.hash.startsWith("#/")) {
+    history.replaceState(null, "", window.location.hash.slice(1));
+  }
+  window.addEventListener("popstate", render);
+  document.addEventListener("click", interceptarEnlaces);
   $("btn-refrescar").addEventListener("click", refrescar);
   $("nav-salir").addEventListener("click", () => session.limpiar());
   render();
