@@ -20,11 +20,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest ruff
+          pip install pytest "ruff==0.16.*"
+      # Reglas clásicas de ruff (errores de sintaxis, imports y variables sin
+      # usar, nombres no definidos). Si encuentra errores, el CI falla.
       - name: Lint (ruff)
-        run: ruff check backend analizador || true
+        run: ruff check --select E4,E7,E9,F backend analizador tests
       - name: Compilar (chequeo de sintaxis)
-        run: python -m compileall backend analizador
+        run: python -m compileall -q backend analizador
       - name: Tests
         run: python -m pytest -q
 
@@ -51,21 +53,38 @@ jobs:
     needs: [backend, frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
+      # Sin los secrets DEPLOY_* (por ejemplo, en un fork) se omite el despliegue
+      # en vez de marcar el CI como fallido.
+      - name: Verificar configuración del servidor
+        id: config
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          if [ -n "$DEPLOY_HOST" ]; then
+            echo "listo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Despliegue omitido: faltan los secrets DEPLOY_HOST, DEPLOY_PORT, DEPLOY_USER y DEPLOY_PASSWORD."
+          fi
       - name: Actualizar y reiniciar en el servidor
+        if: steps.config.outputs.listo == 'true'
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          SUDO_PASS: ${{ secrets.DEPLOY_PASSWORD }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           port: ${{ secrets.DEPLOY_PORT }}
           username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
+          # La contraseña llega como variable de entorno y no queda escrita en el script.
+          envs: SUDO_PASS
           script: |
             set -e
             cd ~/app
             git pull
             venv/bin/pip install -q -r requirements.txt
-            echo "${{ secrets.DEPLOY_PASSWORD }}" | sudo -S pkill -f "uvicorn backend.main:app" || true
+            printf '%s\n' "$SUDO_PASS" | sudo -S pkill -f "uvicorn backend.main:app" || true
             sleep 1
-            echo "${{ secrets.DEPLOY_PASSWORD }}" | sudo -S setsid bash -c \
+            printf '%s\n' "$SUDO_PASS" | sudo -S setsid bash -c \
               'cd ~/app && venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 80 > server.log 2>&1 < /dev/null &'
             sleep 2
             python3 -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1/health', timeout=5).read().decode())"
