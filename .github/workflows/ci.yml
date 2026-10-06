@@ -11,9 +11,9 @@ jobs:
     name: Backend (Python)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configurar Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Instalar dependencias
@@ -34,11 +34,11 @@ jobs:
     name: Frontend (JS)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configurar Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Chequeo de sintaxis de los módulos ES
         run: |
           for f in $(find frontend/js -name "*.js"); do
@@ -47,44 +47,41 @@ jobs:
           done
           echo "Todos los módulos JS OK"
 
+  # Corre en el runner propio instalado en el servidor de la universidad (que
+  # solo es accesible por VPN): el servidor busca los trabajos en GitHub, así que
+  # no hace falta abrir SSH ni guardar contraseñas en el repositorio.
   deploy:
     name: Desplegar al servidor
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, servidor-ubb]
     needs: [backend, frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: produccion
+      url: http://146.83.198.35:1659
     steps:
-      # Sin los secrets DEPLOY_* (por ejemplo, en un fork) se omite el despliegue
-      # en vez de marcar el CI como fallido.
-      - name: Verificar configuración del servidor
-        id: config
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      - name: Actualizar el código
         run: |
-          if [ -n "$DEPLOY_HOST" ]; then
-            echo "listo=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::Despliegue omitido: faltan los secrets DEPLOY_HOST, DEPLOY_PORT, DEPLOY_USER y DEPLOY_PASSWORD."
-          fi
-      - name: Actualizar y reiniciar en el servidor
-        if: steps.config.outputs.listo == 'true'
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          SUDO_PASS: ${{ secrets.DEPLOY_PASSWORD }}
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          port: ${{ secrets.DEPLOY_PORT }}
-          username: ${{ secrets.DEPLOY_USER }}
-          password: ${{ secrets.DEPLOY_PASSWORD }}
-          # La contraseña llega como variable de entorno y no queda escrita en el script.
-          envs: SUDO_PASS
-          script: |
-            set -e
-            cd ~/app
-            git pull
-            venv/bin/pip install -q -r requirements.txt
-            printf '%s\n' "$SUDO_PASS" | sudo -S pkill -f "uvicorn backend.main:app" || true
+          cd ~/app
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Instalar dependencias
+        run: ~/app/venv/bin/pip install -q -r ~/app/requirements.txt
+      - name: Reiniciar la aplicación
+        run: |
+          pkill -f "uvicorn backend.main:app" || true
+          sleep 1
+          cd ~/app
+          # RUNNER_TRACKING_ID vacío: evita que el runner cierre la app al
+          # terminar el job (por defecto mata los procesos que deja el paso).
+          RUNNER_TRACKING_ID="" PYTHONDONTWRITEBYTECODE=1 setsid             venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 80             > ~/app.log 2>&1 < /dev/null &
+      - name: Verificar que responde
+        run: |
+          for i in $(seq 1 15); do
+            if python3 -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1/health', timeout=2).read().decode())"; then
+              exit 0
+            fi
             sleep 1
-            printf '%s\n' "$SUDO_PASS" | sudo -S setsid bash -c \
-              'cd ~/app && venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 80 > server.log 2>&1 < /dev/null &'
-            sleep 2
-            python3 -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1/health', timeout=5).read().decode())"
+          done
+          echo "La aplicación no respondió. Últimas líneas del log:"
+          tail -n 30 ~/app.log
+          exit 1
