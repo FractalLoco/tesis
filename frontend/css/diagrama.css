@@ -1,4 +1,4 @@
-/* ===== Módulo Diagrama de tablas (#/diagrama) ===== */
+/* ===== Módulo Diagrama de tablas (/diagrama) ===== */
 .diag-barra{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:12px}
 .diag-titulo{margin:0 0 3px;font-size:1.2rem}
 .diag-barra p{margin:0}
