@@ -22,11 +22,23 @@ tesis/
 
 ## Qué contiene cada carpeta (por el momento)
 
-- **`analizador/`** — capa de conexión de solo lectura al PostgreSQL objetivo:
-  captura de planes (`EXPLAIN` / `EXPLAIN ANALYZE`), lectura del catálogo de tablas
-  e índices, diagrama de relaciones, estadísticas de la base y un recomendador
-  heurístico de índices (`recomendador.py`, sin ML todavía). `modelo.py` carga el modelo de
-  `ml/` y `orden_join.py` lo usa para recomendar el orden de JOIN.
+- **`analizador/`** — capa de solo lectura sobre el PostgreSQL objetivo, en dos partes:
+  ```
+  analizador/
+  ├── conexion.py        conexión de solo lectura (la usan ambas partes)
+  ├── pagina/            datos que muestran las pantallas
+  │   ├── catalogo.py        tablas y vista previa (Datos de la tabla)
+  │   ├── indices.py         índices de la base (Índices)
+  │   ├── diagrama.py        tablas y relaciones (Diagrama de tablas)
+  │   ├── estadisticas.py    monitoreo en vivo (Estadísticas SQL)
+  │   └── consola.py         ejecución de consultas de lectura
+  └── analisis/          análisis de consultas
+      ├── explain.py         captura de planes (EXPLAIN / EXPLAIN ANALYZE)
+      ├── plan_parser.py     lectura y recorrido del plan
+      ├── recomendador.py    recomendador heurístico de índices (Predicción de índice)
+      ├── modelo.py          carga el modelo de ml/ y estima el tiempo de un plan
+      └── orden_join.py      variantes del plan + modelo (Optimización de consulta)
+  ```
 - **`ml/`** — modelo de Machine Learning entrenado en Google Colab:
   - `modelo_regresion.pkl`: LightGBM que estima el tiempo de un plan (ms) a partir de su
     plan estimado (`EXPLAIN`). Es el que usa la pantalla "Optimización de consulta".

@@ -1,6 +1,6 @@
 import time
 
-from analizador.connector import get_readonly_connection
+from analizador.conexion import get_readonly_connection
 
 def ejecutar_consulta(sql: str, limit: int = 200, config: dict | None = None) -> dict:
     limit = max(1, min(int(limit), 1000))

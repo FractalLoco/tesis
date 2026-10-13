@@ -1,6 +1,6 @@
 from statistics import median
 
-from analizador.connector import get_readonly_connection
+from analizador.conexion import get_readonly_connection
 
 RONDAS_WARMUP = 3
 REPETICIONES = 5

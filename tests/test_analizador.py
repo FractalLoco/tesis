@@ -1,4 +1,4 @@
-from analizador.plan_parser import parse_plan
+from analizador.analisis.plan_parser import parse_plan
 
 def test_parse_plan():
     plan = [{"Plan": {"Node Type": "Hash Join", "Total Cost": 42.0,

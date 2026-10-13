@@ -1,6 +1,6 @@
 import time
 
-from analizador.connector import get_readonly_connection
+from analizador.conexion import get_readonly_connection
 
 def obtener_estadisticas(config: dict | None = None) -> dict:
     with get_readonly_connection(config) as conn:
