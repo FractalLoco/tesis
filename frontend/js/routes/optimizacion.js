@@ -77,6 +77,7 @@ async function ejecutar() {
 function pintarResultado(r) {
   const a = r.analisis || {};
   const rec = r.recomendaciones || {};
+  const ml = r.recomendacion_ml || {};
   $("op-resultado").innerHTML = `
     <div class="stats-grid plan-resumen">
       <div class="stat-card"><div class="stat-label">Costo estimado</div><div class="stat-value">${num(a.costo_total_estimado)}</div></div>
@@ -87,12 +88,39 @@ function pintarResultado(r) {
     <div class="sub-titulo">Plan de ejecución</div>
     <div class="plan-arbol">${a.arbol ? nodoHTML(a.arbol, a.tiempo_real_ms) : '<div class="empty">Sin datos del plan.</div>'}</div>
     <div class="sub-titulo">Recomendaciones</div>
+    ${ml.disponible ? bloqueML(ml) : ""}
     <div class="recom-pendiente">
-      ${chipPendiente("Orden de JOIN", rec.orden_join)}
+      ${ml.disponible ? "" : chipPendiente("Orden de JOIN", rec.orden_join)}
       ${chipPendiente("Índices", rec.indices)}
       ${chipPendiente("Diagnóstico", rec.diagnostico)}
       <p class="muted mini">La recomendación de índices ya está disponible en <a href="/prediccion">Predicción de índice</a>.
-        El orden de JOIN por Machine Learning llegará más adelante.</p>
+        ${ml.disponible ? "" : "El orden de JOIN por Machine Learning llegará más adelante."}</p>
+    </div>`;
+}
+
+// Estimación del modelo de ML (regresión LightGBM) sobre variantes del plan.
+function bloqueML(ml) {
+  if (!ml.aplica) {
+    return `<div class="recom-pendiente plan-resumen">
+      <div class="recom-fila"><b>Orden de JOIN (modelo ML):</b> <span class="muted">${esc(ml.motivo)}</span></div>
+    </div>`;
+  }
+  const ms = (v) => `${num(v)} <small>ms</small>`;
+  return `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Tiempo estimado actual</div><div class="stat-value">${ms(ml.tiempo_actual_ms)}</div></div>
+      <div class="stat-card"><div class="stat-label">Mejor tiempo estimado</div><div class="stat-value">${ms(ml.tiempo_mejor_ms)}</div></div>
+      <div class="stat-card"><div class="stat-label">Mejora estimada</div><div class="stat-value">${num(ml.mejora_pct)} <small>%</small></div></div>
+    </div>
+    <div class="recom-pendiente plan-resumen" style="margin-top:12px">
+      ${ml.aviso ? `<div class="disabled-note">${esc(ml.aviso)}</div>` : ""}
+      <div class="recom-fila"><b>Orden de JOIN (modelo ML):</b> ${ml.mejor_es_actual
+        ? "el plan que elige PostgreSQL ya es el más rápido entre las variantes evaluadas."
+        : "una variante del plan sería más rápida."}</div>
+      <div class="recom-fila"><b>Mejor variante:</b> <span class="muted">${esc(ml.descripcion)}</span></div>
+      <p class="muted mini">Estimación del modelo de regresión (LightGBM) sobre ${num(ml.variantes_evaluadas)}
+        ${ml.variantes_evaluadas === 1 ? "variante" : "variantes"} del plan, obtenidas solo con EXPLAIN (sin ejecutar la consulta).
+        Prototipo entrenado con un esquema tipo TPC-H: en otras bases la estimación es orientativa.</p>
     </div>`;
 }
 

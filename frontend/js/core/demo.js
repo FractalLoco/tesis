@@ -98,6 +98,11 @@ export const analizarDemo = (query) => ({
     indices: "pendiente (HypoPG)",
     diagnostico: "pendiente (módulo de diagnóstico)",
   },
+  // La consulta de ejemplo une solo 2 tablas: el modelo de orden de JOIN no aplica.
+  recomendacion_ml: {
+    disponible: true, aplica: false, n_tablas: 2,
+    motivo: "No aplica: no hay orden de JOIN que reordenar.",
+  },
 });
 
 export const prediccionDemo = (query) => ({
