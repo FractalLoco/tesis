@@ -46,6 +46,14 @@ table.data th,table.data td{border-bottom:1px solid var(--line);padding:8px 12px
 table.data thead th{position:sticky;top:0;background:var(--surface-2)}
 table.data th .coltype{display:block;font-size:.7rem;color:var(--muted);font-weight:400}
 table.data tbody tr:hover{background:var(--surface-2)}
+/* Vista previa por partes: celdas largas cortadas (valor completo en el tooltip) y paginador */
+table.data td{max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.tabla-info{margin-bottom:8px}
+.acc-body .tabla-wrap{max-height:none}
+.tabla-barra{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px}
+.paginador{display:flex;align-items:center;gap:10px;margin-left:auto}
+.tabla-barra button.ghost{padding:6px 12px;font-size:.85rem}
+.tabla-barra button:disabled{opacity:.5;cursor:default}
 .empty{padding:12px;color:var(--muted);font-size:.9rem}
 .err-box{padding:12px;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:.88rem;line-height:1.45}
 .err-mas{margin-top:8px;color:var(--muted);font-size:.8rem}

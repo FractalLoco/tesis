@@ -68,15 +68,57 @@ async function toggle(item) {
   try {
     const data = esDemo() ? datosTablaDemo(tabla) : await api.verTabla(esquema, tabla, 100);
     if (token !== vigencia) return;
-    body.innerHTML = tablaHTML(esquema, tabla, data);
+    mostrarTabla(body, esquema, tabla, data);
     item.dataset.cargado = "1";
   } catch (err) { if (token === vigencia) body.innerHTML = cajaError(err); }
 }
 
-function tablaHTML(esquema, tabla, data) {
+// Para no agobiar con información, la vista previa se muestra por partes:
+// pocas filas por página y solo las primeras columnas (el resto, a pedido).
+const FILAS_POR_PAGINA = 10;
+const COLS_VISIBLES = 6;
+
+function mostrarTabla(body, esquema, tabla, data) {
+  const vista = { pagina: 0, todasLasCols: false };
+  const pintarVista = () => { body.innerHTML = tablaHTML(esquema, tabla, data, vista); };
+  body.onclick = (e) => {
+    const accion = e.target.closest("[data-accion]")?.dataset.accion;
+    if (accion === "anterior") vista.pagina--;
+    else if (accion === "siguiente") vista.pagina++;
+    else if (accion === "columnas") vista.todasLasCols = !vista.todasLasCols;
+    else return;
+    pintarVista();
+  };
+  pintarVista();
+}
+
+function tablaHTML(esquema, tabla, data, vista) {
   const cols = data.columnas || [];
-  const info = `<div class="muted mini" style="margin-bottom:8px">${esc(esquema)}.${esc(tabla)} · ${cols.length} columnas · mostrando ${data.n_filas} filas</div>`;
-  const thead = "<tr>" + cols.map((c) => `<th>${esc(c.nombre)}<span class="coltype">${esc(c.tipo)}</span></th>`).join("") + "</tr>";
-  const tbody = (data.filas || []).map((fila) => "<tr>" + fila.map((v) => `<td>${esc(v)}</td>`).join("") + "</tr>").join("");
-  return info + `<div class="tabla-wrap"><table class="data"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+  const filas = data.filas || [];
+  const nCols = vista.todasLasCols ? cols.length : Math.min(cols.length, COLS_VISIBLES);
+  const paginas = Math.max(1, Math.ceil(filas.length / FILAS_POR_PAGINA));
+  const desde = vista.pagina * FILAS_POR_PAGINA;
+  const visibles = filas.slice(desde, desde + FILAS_POR_PAGINA);
+
+  const rango = filas.length ? `filas ${desde + 1}–${desde + visibles.length} de ${filas.length}` : "sin filas";
+  const info = `<div class="muted mini tabla-info">${esc(esquema)}.${esc(tabla)} · ${cols.length} columnas · ${rango} (vista previa)</div>`;
+  const thead = "<tr>" + cols.slice(0, nCols).map((c) => `<th>${esc(c.nombre)}<span class="coltype">${esc(c.tipo)}</span></th>`).join("") + "</tr>";
+  const tbody = visibles.map((fila) => "<tr>" +
+    fila.slice(0, nCols).map((v) => `<td title="${esc(v)}">${esc(v)}</td>`).join("") + "</tr>").join("");
+
+  const ocultas = cols.length - COLS_VISIBLES;
+  const btnCols = ocultas > 0
+    ? `<button class="ghost" type="button" data-accion="columnas">${vista.todasLasCols
+      ? "Mostrar menos columnas"
+      : `Mostrar ${ocultas} ${ocultas === 1 ? "columna" : "columnas"} más`}</button>`
+    : "";
+  const paginador = paginas > 1
+    ? `<div class="paginador">
+        <button class="ghost" type="button" data-accion="anterior"${vista.pagina === 0 ? " disabled" : ""}>Anterior</button>
+        <span class="muted mini">Página ${vista.pagina + 1} de ${paginas}</span>
+        <button class="ghost" type="button" data-accion="siguiente"${vista.pagina >= paginas - 1 ? " disabled" : ""}>Siguiente</button>
+      </div>`
+    : "";
+  const barra = btnCols || paginador ? `<div class="tabla-barra">${btnCols}${paginador}</div>` : "";
+  return info + `<div class="tabla-wrap"><table class="data"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>` + barra;
 }
