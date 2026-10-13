@@ -67,22 +67,26 @@ framework ni build):
 frontend/js/
   main.js              arranca el router
   core/
-    router.js          mapea cada URL (#/ruta) a su módulo y protege las rutas
+    router.js          mapea cada URL (/ruta, History API) a su módulo y protege las rutas
     api.js             todas las llamadas al backend
     session.js         credenciales en memoria (no se guardan en el navegador)
     util.js, demo.js, pestanas.js, indices-info.js, historial.js
   routes/
-    conexion.js        #/conexion     (ingresar datos de la base)
-    validando.js       #/validando    (validación paso a paso con ticks)
-    tablas.js          #/tablas       (Datos de la tabla · pestaña Tablas)
-    indices.js         #/indices      (Datos de la tabla · pestaña Índices, separada de las tablas)
-    diagrama.js        #/diagrama     (diagrama de tablas, relaciones e índices conectados)
-    estadisticas.js    #/estadisticas (monitoreo en vivo)
-    optimizacion.js     #/optimizacion (plan de ejecución EXPLAIN ANALYZE + historial)
-    prediccion.js       #/prediccion   (recomendación heurística de índices + historial)
+    conexion.js        /conexion      (ingresar datos de la base)
+    validando.js       /validando     (validación paso a paso con ticks)
+    tablas.js          /tablas        (Datos de la tabla · pestaña Tablas)
+    indices.js         /indices       (Datos de la tabla · pestaña Índices, separada de las tablas)
+    diagrama.js        /diagrama      (diagrama de tablas, relaciones e índices conectados)
+    estadisticas.js    /estadisticas  (monitoreo en vivo)
+    optimizacion.js    /optimizacion  (plan de ejecución EXPLAIN ANALYZE + historial)
+    prediccion.js      /prediccion    (recomendación heurística de índices + historial)
 ```
 
-`historial.js` guarda en `localStorage` las consultas analizadas en `#/optimizacion`
-y `#/prediccion`, separadas por base de datos (nunca se guarda la contraseña).
+`historial.js` guarda en `localStorage` las consultas analizadas en `/optimizacion`
+y `/prediccion`, separadas por base de datos (nunca se guarda la contraseña).
 
-El router protege las rutas: si no hay conexión activa, redirige a `#/conexion`.
+El router protege las rutas: si no hay conexión activa, redirige a `/conexion`.
+
+Las URLs son limpias (`/tablas`, `/diagrama`, sin `#`). El backend devuelve
+`index.html` para cualquier ruta de pantalla, así que se pueden refrescar o abrir
+directamente; `/api/...` y los archivos estáticos inexistentes siguen dando 404.

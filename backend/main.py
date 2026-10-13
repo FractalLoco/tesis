@@ -38,7 +38,8 @@ class FrontendSPA(StaticFiles):
             # Se usa la ruta de la URL: "path" viene con el separador del sistema operativo.
             url = scope["path"]
             # Un archivo que no existe (tiene extensión) o una ruta de la API sí son 404.
-            if exc.status_code != 404 or url.startswith("/api/") or "." in url.rsplit("/", 1)[-1]:
+            es_api = url == "/api" or url.startswith("/api/")
+            if exc.status_code != 404 or es_api or "." in url.rsplit("/", 1)[-1]:
                 raise
             return await super().get_response("index.html", scope)
 
