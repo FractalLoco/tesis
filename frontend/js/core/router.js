@@ -7,12 +7,8 @@ import * as tablas from "../routes/tablas.js";
 import * as indices from "../routes/indices.js";
 import * as diagrama from "../routes/diagrama.js";
 import * as estadisticas from "../routes/estadisticas.js";
-import * as noDisponible from "../routes/no-disponible.js";
-// "optimizacion.js" y "prediccion.js" ya están construidas y probadas (editor SQL,
-// plan de ejecución, recomendaciones, historial); el navbar las deja apuntando a
-// 404 por ahora a pedido del usuario, listas para reactivar cambiando estas dos
-// líneas en RUTAS más abajo por: import * as optimizacion from "../routes/optimizacion.js";
-// y lo mismo para prediccion.js.
+import * as optimizacion from "../routes/optimizacion.js";
+import * as prediccion from "../routes/prediccion.js";
 
 const RUTAS = {
   "/conexion":     { modulo: conexion,     requiereConexion: false, navbar: false },
@@ -21,8 +17,8 @@ const RUTAS = {
   "/indices":      { modulo: indices,      requiereConexion: true,  navbar: true, titulo: "Índices", navActivo: "/tablas" },
   "/diagrama":     { modulo: diagrama,     requiereConexion: true,  navbar: true, titulo: "Diagrama de tablas", ancho: true },
   "/estadisticas": { modulo: estadisticas, requiereConexion: true,  navbar: true, titulo: "Estadísticas SQL" },
-  "/optimizacion": { modulo: noDisponible, requiereConexion: true,  navbar: true, titulo: "Optimización de consulta" },
-  "/prediccion":   { modulo: noDisponible, requiereConexion: true,  navbar: true, titulo: "Predicción de índice" },
+  "/optimizacion": { modulo: optimizacion, requiereConexion: true,  navbar: true, titulo: "Optimización de consulta" },
+  "/prediccion":   { modulo: prediccion,   requiereConexion: true,  navbar: true, titulo: "Predicción de índice" },
 };
 
 let rutaActual = null;
