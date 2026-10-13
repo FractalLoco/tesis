@@ -91,7 +91,7 @@ function pintarResultado(r) {
       ${chipPendiente("Orden de JOIN", rec.orden_join)}
       ${chipPendiente("Índices", rec.indices)}
       ${chipPendiente("Diagnóstico", rec.diagnostico)}
-      <p class="muted mini">La recomendación de índices ya está disponible en <a href="#/prediccion">Predicción de índice</a>.
+      <p class="muted mini">La recomendación de índices ya está disponible en <a href="/prediccion">Predicción de índice</a>.
         El orden de JOIN por Machine Learning llegará más adelante.</p>
     </div>`;
 }
