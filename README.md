@@ -76,7 +76,12 @@ frontend/js/
     validando.js       /validando     (validación paso a paso con ticks)
     tablas.js          /tablas        (Datos de la tabla · pestaña Tablas)
     indices.js         /indices       (Datos de la tabla · pestaña Índices, separada de las tablas)
-    diagrama.js        /diagrama      (diagrama de tablas, relaciones e índices conectados)
+    diagrama/          /diagrama      (diagrama de tablas, relaciones e índices conectados)
+      index.js         entrada de la ruta: pantalla, carga de datos y controles
+      estado.js        estado compartido y medidas del dibujo
+      layout.js        posiciones de tablas e índices (capas y orden de cada capa)
+      dibujo.js        SVG de tablas, índices y relaciones; selección
+      zoom.js          zoom y "Ajustar"
     estadisticas.js    /estadisticas  (monitoreo en vivo)
     optimizacion.js    /optimizacion  (plan de ejecución EXPLAIN ANALYZE + historial)
     prediccion.js      /prediccion    (recomendación heurística de índices + historial)

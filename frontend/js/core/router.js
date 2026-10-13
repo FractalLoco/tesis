@@ -5,7 +5,7 @@ import * as conexion from "../routes/conexion.js";
 import * as validando from "../routes/validando.js";
 import * as tablas from "../routes/tablas.js";
 import * as indices from "../routes/indices.js";
-import * as diagrama from "../routes/diagrama.js";
+import * as diagrama from "../routes/diagrama/index.js";
 import * as estadisticas from "../routes/estadisticas.js";
 import * as optimizacion from "../routes/optimizacion.js";
 import * as prediccion from "../routes/prediccion.js";
