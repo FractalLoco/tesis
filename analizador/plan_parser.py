@@ -1,7 +1,21 @@
+from collections.abc import Iterator
+
+def raiz(plan_json) -> dict:
+    """Nodo raíz de la salida de EXPLAIN (FORMAT JSON). Acepta la salida completa
+    ([{"Plan": ...}]), un solo elemento ({"Plan": ...}) o el nodo ya extraído."""
+    if isinstance(plan_json, list):
+        plan_json = plan_json[0]
+    return plan_json.get("Plan", plan_json)
+
+def recorrer(nodo: dict, profundidad: int = 0) -> Iterator[tuple[dict, int]]:
+    """Recorre el árbol del plan en preorden: entrega (nodo, profundidad)."""
+    yield nodo, profundidad
+    for hijo in nodo.get("Plans", []):
+        yield from recorrer(hijo, profundidad + 1)
+
 def parse_plan(plan_json) -> dict:
-    root = plan_json[0]["Plan"] if isinstance(plan_json, list) else plan_json["Plan"]
-    operadores: list[str] = []
-    _recorrer(root, operadores)
+    root = raiz(plan_json)
+    operadores = [n.get("Node Type") for n, _ in recorrer(root)]
     return {
         "operadores": operadores,
         "n_operadores": len(operadores),
@@ -10,11 +24,6 @@ def parse_plan(plan_json) -> dict:
         "tiempo_real_ms": root.get("Actual Total Time"),
         "arbol": _nodo(root),
     }
-
-def _recorrer(nodo: dict, acc: list[str]) -> None:
-    acc.append(nodo.get("Node Type"))
-    for hijo in nodo.get("Plans", []):
-        _recorrer(hijo, acc)
 
 def _nodo(n: dict) -> dict:
     return {

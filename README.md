@@ -10,6 +10,7 @@ analizador externo y desacoplado.
 ```
 tesis/
 ├── analizador/    Conexión de solo lectura a PostgreSQL y captura de datos
+├── ml/            Modelo de Machine Learning entrenado (orden de JOIN) y su notebook
 ├── backend/       API (FastAPI) que orquesta el analizador y sirve el frontend
 ├── frontend/      Interfaz web (HTML/CSS/JS por módulos)
 ├── sql/           Scripts SQL de apoyo
@@ -24,7 +25,15 @@ tesis/
 - **`analizador/`** — capa de conexión de solo lectura al PostgreSQL objetivo:
   captura de planes (`EXPLAIN` / `EXPLAIN ANALYZE`), lectura del catálogo de tablas
   e índices, diagrama de relaciones, estadísticas de la base y un recomendador
-  heurístico de índices (`recomendador.py`, sin ML todavía).
+  heurístico de índices (`recomendador.py`, sin ML todavía). `modelo.py` carga el modelo de
+  `ml/` y `orden_join.py` lo usa para recomendar el orden de JOIN.
+- **`ml/`** — modelo de Machine Learning entrenado en Google Colab:
+  - `modelo_regresion.pkl`: LightGBM que estima el tiempo de un plan (ms) a partir de su
+    plan estimado (`EXPLAIN`). Es el que usa la pantalla "Optimización de consulta".
+  - `modelo_ranking.pkl`: LightGBM que ordena planes (LambdaMART). Guardado para más adelante;
+    hoy no se usa.
+  - `features.json`: nombres y orden de las características que espera el modelo.
+  - `modelo_join_order_colab.ipynb`: notebook que genera los datos, entrena y exporta los modelos.
 - **`backend/`** — servidor API en FastAPI que coordina el analizador y sirve el frontend;
   rutas separadas por dominio, esquemas de datos y servicios.
 - **`frontend/`** — interfaz web en módulos: ingreso de datos de la base,
@@ -43,6 +52,23 @@ El proyecto incluye un archivo `.env.example`. Para que funcione, cópialo como
 ```bash
 cp .env.example .env
 ```
+
+## Modelo de Machine Learning (orden de JOIN)
+
+En "Optimización de consulta", además del plan real (`EXPLAIN ANALYZE`), el backend pide
+varios planes **estimados** de la misma consulta (`EXPLAIN`, sin ejecutarla), cambiando la
+configuración del planificador con `SET LOCAL` en una transacción de solo lectura
+(`join_collapse_limit` y `enable_hashjoin` / `enable_mergejoin` / `enable_nestloop`). El modelo
+estima el tiempo de cada plan y se muestra el actual, el mejor y la mejora estimada.
+
+- Aplica a consultas con INNER JOIN de 3 a 5 tablas (el rango con que se entrenó); con 6 o más
+  se muestra un aviso. Con LEFT/RIGHT/FULL JOIN, subconsultas, CTE o 1–2 tablas no aplica, y el
+  resto del análisis sigue igual. Se decide leyendo el plan, no el texto SQL.
+- Si faltan los archivos de `ml/` o las librerías (`lightgbm`, `scikit-learn`, `joblib`), la app
+  funciona igual, sin el bloque del modelo. En Linux, `lightgbm` necesita la librería del
+  sistema `libgomp1` (`sudo apt install libgomp1`).
+- Es un prototipo entrenado con un esquema sintético tipo TPC-H: en otras bases la estimación es
+  orientativa hasta reentrenarlo con los benchmarks reales.
 
 ## Licencia
 
