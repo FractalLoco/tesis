@@ -4,3 +4,8 @@ uvicorn[standard]>=0.29
 pydantic>=2.0
 psycopg[binary]>=3.1
 python-dotenv>=1.0
+# Modelo de ML (ml/modelo_regresion.pkl es un LGBMRegressor guardado con joblib;
+# scikit-learn hace falta para cargarlo). Si faltan, la app funciona sin el modelo.
+lightgbm>=4.0,<5
+scikit-learn>=1.3
+joblib>=1.3
