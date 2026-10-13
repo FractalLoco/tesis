@@ -12,9 +12,9 @@ cuentan las tablas recorridas y se revisan los tipos de JOIN.
 import itertools
 from collections import Counter
 
-from analizador import modelo
-from analizador.connector import get_readonly_connection
-from analizador.plan_parser import raiz, recorrer
+from analizador.analisis import modelo
+from analizador.analisis.plan_parser import raiz, recorrer
+from analizador.conexion import get_readonly_connection
 
 # Rango de tablas con el que se entrenó el modelo.
 MIN_TABLAS, MAX_TABLAS = 3, 5

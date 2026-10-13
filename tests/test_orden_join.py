@@ -1,6 +1,6 @@
 import pytest
 
-from analizador import modelo, orden_join
+from analizador.analisis import modelo, orden_join
 
 def nodo(tipo, hijos=(), **campos):
     return {"Node Type": tipo, "Total Cost": 10.0, "Startup Cost": 1.0, "Plan Rows": 100,

@@ -1,4 +1,4 @@
-from analizador.connector import get_readonly_connection
+from analizador.conexion import get_readonly_connection
 
 CONSULTA = """
     SELECT n.nspname                                   AS esquema,

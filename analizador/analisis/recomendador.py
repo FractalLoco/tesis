@@ -7,8 +7,8 @@ ningún DDL; solo devuelve el SQL sugerido para que el usuario lo revise.
 """
 import re
 
-from analizador.explain import get_plan
-from analizador.indices import listar_todos_indices
+from analizador.analisis.explain import get_plan
+from analizador.pagina.indices import listar_todos_indices
 
 UMBRAL_FILAS = 500  # por debajo de esto no vale la pena sugerir un índice
 

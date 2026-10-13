@@ -1,6 +1,6 @@
 from psycopg import sql
 
-from analizador.connector import get_readonly_connection
+from analizador.conexion import get_readonly_connection
 
 def listar_tablas(config: dict | None = None) -> list[dict]:
     q = """

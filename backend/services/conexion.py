@@ -1,4 +1,4 @@
-from analizador.connector import get_readonly_connection
+from analizador.conexion import get_readonly_connection
 
 # Tablas de usuario sobre las que el usuario conectado PODRÍA escribir según sus
 # permisos. La conexión es de solo lectura igual, pero si este número no es 0 el

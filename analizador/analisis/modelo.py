@@ -14,11 +14,11 @@ import math
 from functools import lru_cache
 from pathlib import Path
 
-from analizador.plan_parser import raiz, recorrer
+from analizador.analisis.plan_parser import raiz, recorrer
 
 log = logging.getLogger("analizador.modelo")
 
-DIR_ML = Path(__file__).resolve().parent.parent / "ml"
+DIR_ML = Path(__file__).resolve().parents[2] / "ml"
 ARCHIVO_MODELO = DIR_ML / "modelo_regresion.pkl"
 ARCHIVO_FEATURES = DIR_ML / "features.json"
 

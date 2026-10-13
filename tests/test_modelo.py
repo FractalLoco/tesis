@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from analizador import modelo
+from analizador.analisis import modelo
 
 ML = Path(__file__).resolve().parent.parent / "ml"
 

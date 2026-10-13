@@ -3,10 +3,10 @@
 Por ahora no tiene reglas propias más allá de las de la conexión; existe para que
 todas las rutas pasen por la capa de servicios y no llamen directo al analizador.
 """
-from analizador.catalogo import listar_tablas, preview_tabla
-from analizador.diagrama import obtener_diagrama
-from analizador.estadisticas import obtener_estadisticas
-from analizador.indices import listar_todos_indices
+from analizador.pagina.catalogo import listar_tablas, preview_tabla
+from analizador.pagina.diagrama import obtener_diagrama
+from analizador.pagina.estadisticas import obtener_estadisticas
+from analizador.pagina.indices import listar_todos_indices
 
 __all__ = [
     "listar_tablas",

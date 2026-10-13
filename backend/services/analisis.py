@@ -1,9 +1,9 @@
 import logging
 
-from analizador.explain import get_plan
-from analizador.orden_join import recomendar_orden_join
-from analizador.plan_parser import parse_plan
-from analizador.recomendador import recomendar_indices as recomendar
+from analizador.analisis.explain import get_plan
+from analizador.analisis.orden_join import recomendar_orden_join
+from analizador.analisis.plan_parser import parse_plan
+from analizador.analisis.recomendador import recomendar_indices as recomendar
 from backend.services.reglas import validar_consulta
 
 log = logging.getLogger("backend.services.analisis")
