@@ -1,3 +1,4 @@
+import * as api from "../core/api.js";
 import * as session from "../core/session.js";
 import { irA } from "../core/router.js";
 import { $ } from "../core/util.js";
@@ -35,4 +36,23 @@ export function render(app) {
     session.setDemo(false);
     irA("/validando");   // paso a la validación paso a paso
   });
+
+  // Lo que la persona escribe no se pisa con los datos precargados.
+  $("form-conexion").addEventListener("input", (e) => { e.target.dataset.editado = "1"; });
+  precargar();
+}
+
+// Si el servidor tiene PRECARGAR_CONEXION activo, llena el formulario con la base
+// del .env. La contraseña nunca viaja al navegador: si hay una guardada, el campo
+// puede quedar en blanco y el servidor la usa.
+async function precargar() {
+  let datos;
+  try { datos = await api.conexionPorDefecto(); } catch { return; }
+  if (!datos.precargar || !$("form-conexion")) return;
+  for (const campo of ["host", "port", "dbname", "user"]) {
+    if (datos[campo] && !$(campo).dataset.editado) $(campo).value = datos[campo];
+  }
+  if (datos.clave_guardada) {
+    $("password").placeholder = "Guardada en el servidor (puedes dejarla en blanco)";
+  }
 }

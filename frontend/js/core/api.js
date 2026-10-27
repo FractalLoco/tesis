@@ -37,6 +37,7 @@ const post = (ruta, body) => pedir(BASE + ruta, {
 });
 
 export const conectar = (cfg) => post("/conectar", cfg);
+export const conexionPorDefecto = () => pedir(BASE + "/conexion-por-defecto");
 
 export const listarTablas = () => post("/tablas", { conexion: obtener() });
 export const verTabla = (esquema, tabla, limit = 50) =>

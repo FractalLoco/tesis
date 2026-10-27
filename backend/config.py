@@ -15,6 +15,11 @@ DB_NAME = os.getenv("DB_NAME", "optimizacion")
 DB_USER = os.getenv("DB_USER", "analizador_ro")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 
+# Si es verdadero, la pantalla de conexión llega llena con la base de arriba y la
+# contraseña puede dejarse en blanco (se usa DB_PASSWORD). Pensado para trabajar
+# en local; en un servidor público conviene dejarlo en false.
+PRECARGAR_CONEXION = os.getenv("PRECARGAR_CONEXION", "false").strip().lower() in ("1", "true", "si", "sí")
+
 # Segundos máximos de espera al abrir la conexión con PostgreSQL. Sin esto, un
 # host que no responde deja la petición colgada indefinidamente.
 DB_CONNECT_TIMEOUT = int(os.getenv("DB_CONNECT_TIMEOUT", "10"))

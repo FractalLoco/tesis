@@ -1,4 +1,6 @@
+from analizador import conexion as conexion_db
 from analizador.conexion import get_readonly_connection
+from backend import config
 
 # Tablas de usuario sobre las que el usuario conectado PODRÍA escribir según sus
 # permisos. La conexión es de solo lectura igual, pero si este número no es 0 el
@@ -50,4 +52,18 @@ def probar_conexion(config: dict) -> dict:
         "n_tablas": n_tablas,
         "usuario_solo_lectura": not es_superusuario and not tablas_escribibles,
         "advertencias": advertencias,
+    }
+
+def conexion_por_defecto() -> dict:
+    """Datos para llenar la pantalla de conexión con la base del .env. Nunca
+    incluye la contraseña: solo avisa si hay una guardada en el servidor."""
+    if not conexion_db.PRECARGAR_CONEXION:
+        return {"precargar": False}
+    return {
+        "precargar": True,
+        "host": config.DB_HOST,
+        "port": config.DB_PORT,
+        "dbname": config.DB_NAME,
+        "user": config.DB_USER,
+        "clave_guardada": bool(config.DB_PASSWORD),
     }
