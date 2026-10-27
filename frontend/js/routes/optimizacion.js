@@ -5,7 +5,11 @@ import * as historial from "../core/historial.js";
 import { $, cajaError, esc } from "../core/util.js";
 
 const TIPO = "optimizacion";
-const EJEMPLO = "SELECT p.id, c.nombre, p.total\nFROM pedidos p\nJOIN clientes c ON c.id = p.cliente_id\nWHERE p.estado = 'pendiente'\nORDER BY p.fecha DESC\nLIMIT 50;";
+// Ejemplo según la base: en modo demo usa sus tablas inventadas; con una base
+// real, el esquema tipo TPC-H del proyecto (sql/base_de_prueba.sql y el modelo).
+const EJEMPLO_DEMO = "SELECT p.id, c.nombre, p.total\nFROM pedidos p\nJOIN clientes c ON c.id = p.cliente_id\nWHERE p.estado = 'pendiente'\nORDER BY p.fecha DESC\nLIMIT 50;";
+const EJEMPLO_TPCH = "SELECT count(*)\nFROM lineitem\nJOIN orders ON orders.o_orderkey = lineitem.l_orderkey\nJOIN customer ON customer.c_custkey = orders.o_custkey\nJOIN nation ON nation.n_nationkey = customer.c_nationkey\nWHERE nation.n_name = 'GERMANY';";
+const ejemplo = () => (esDemo() ? EJEMPLO_DEMO : EJEMPLO_TPCH);
 
 const dbname = () => (sesionActual() || {}).dbname || "";
 const num = (n) => (n == null ? "—" : Number(n).toLocaleString("es-CL", { maximumFractionDigits: 2 }));
@@ -23,7 +27,7 @@ export function render(app) {
         qué operadores usa PostgreSQL, cuánto cuesta cada uno y cuánto demoró de verdad.</p>
     </div>
     <div class="editor-sql">
-      <textarea id="op-sql" rows="6" spellcheck="false" placeholder="${esc(EJEMPLO)}"></textarea>
+      <textarea id="op-sql" rows="6" spellcheck="false" placeholder="${esc(ejemplo())}"></textarea>
       <div class="editor-barra">
         <button id="op-ejecutar" type="button">Analizar plan</button>
         <button id="op-ejemplo" type="button" class="ghost">Usar ejemplo</button>
@@ -38,7 +42,7 @@ export function render(app) {
     </div>
     <div id="op-historial"></div>`;
 
-  $("op-ejemplo").onclick = () => { $("op-sql").value = EJEMPLO; };
+  $("op-ejemplo").onclick = () => { $("op-sql").value = ejemplo(); };
   $("op-ejecutar").onclick = ejecutar;
   $("op-limpiar").onclick = () => { historial.limpiar(TIPO, dbname()); pintarHistorial(); };
   pintarHistorial();

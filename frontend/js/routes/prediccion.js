@@ -5,7 +5,11 @@ import * as historial from "../core/historial.js";
 import { $, cajaError, esc } from "../core/util.js";
 
 const TIPO = "prediccion";
-const EJEMPLO = "SELECT p.id, c.nombre, p.total\nFROM pedidos p\nJOIN clientes c ON c.id = p.cliente_id\nWHERE p.estado = 'pendiente'\nORDER BY p.fecha DESC\nLIMIT 50;";
+// Ejemplo según la base: en modo demo usa sus tablas inventadas; con una base
+// real, el esquema tipo TPC-H del proyecto (sql/base_de_prueba.sql y el modelo).
+const EJEMPLO_DEMO = "SELECT p.id, c.nombre, p.total\nFROM pedidos p\nJOIN clientes c ON c.id = p.cliente_id\nWHERE p.estado = 'pendiente'\nORDER BY p.fecha DESC\nLIMIT 50;";
+const EJEMPLO_TPCH = "SELECT o_orderkey, o_totalprice\nFROM orders\nWHERE o_totalprice > 80000\nORDER BY o_totalprice DESC\nLIMIT 50;";
+const ejemplo = () => (esDemo() ? EJEMPLO_DEMO : EJEMPLO_TPCH);
 
 const dbname = () => (sesionActual() || {}).dbname || "";
 
@@ -22,7 +26,7 @@ export function render(app) {
         su plan estimado. No se crea ningún índice: solo se sugiere el SQL para que lo revises y decidas tú.</p>
     </div>
     <div class="editor-sql">
-      <textarea id="pi-sql" rows="6" spellcheck="false" placeholder="${esc(EJEMPLO)}"></textarea>
+      <textarea id="pi-sql" rows="6" spellcheck="false" placeholder="${esc(ejemplo())}"></textarea>
       <div class="editor-barra">
         <button id="pi-ejecutar" type="button">Predecir índices</button>
         <button id="pi-ejemplo" type="button" class="ghost">Usar ejemplo</button>
@@ -37,7 +41,7 @@ export function render(app) {
     </div>
     <div id="pi-historial"></div>`;
 
-  $("pi-ejemplo").onclick = () => { $("pi-sql").value = EJEMPLO; };
+  $("pi-ejemplo").onclick = () => { $("pi-sql").value = ejemplo(); };
   $("pi-ejecutar").onclick = ejecutar;
   $("pi-limpiar").onclick = () => { historial.limpiar(TIPO, dbname()); pintarHistorial(); };
   pintarHistorial();
