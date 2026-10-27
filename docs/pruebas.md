@@ -4,9 +4,9 @@ Las pruebas se corren con **pytest** desde la raíz del repositorio y están sep
 
 | Carpeta | Tipo | Qué prueba | Necesita |
 |---|---|---|---|
-| `tests/unitarias/` | Unitarias | Funciones sueltas del analizador y el backend (46) | Nada más que Python |
-| `tests/integracion/` | Integración (backend) | La API conectada a un PostgreSQL real (14) | Base de prueba + `.env` |
-| `tests/e2e/` | E2E (frontend) | Un navegador usa la aplicación completa (9) | Base de prueba + `.env` + Playwright |
+| `tests/unitarias/` | Unitarias | Funciones sueltas del analizador y el backend (54) | Nada más que Python |
+| `tests/integracion/` | Integración (backend) | La API conectada a un PostgreSQL real (18) | Base de prueba + `.env` |
+| `tests/e2e/` | E2E (frontend) | Un navegador usa la aplicación completa (12) | Base de prueba + `.env` + Playwright |
 
 Si falta la base de prueba, las de integración y E2E se **omiten** (no fallan). Así pasa en
 GitHub Actions, donde solo corren las unitarias.
@@ -34,7 +34,8 @@ psql -d optimizacion -f sql/base_de_prueba.sql
 Después, crear el usuario de solo lectura con `sql/usuario_solo_lectura.sql`, cambiando
 `mi_base` por `optimizacion` y poniendo una clave. Por último, copiar `.env.example` a `.env`
 y completar `DB_PASSWORD` con esa clave (el resto de los valores ya apunta a `optimizacion`
-con el usuario `analizador_ro`).
+con el usuario `analizador_ro`). Con `PRECARGAR_CONEXION=true` la pantalla de conexión llega
+llena con esa base y la contraseña se puede dejar en blanco.
 
 ## 3. Correr las pruebas
 
@@ -74,8 +75,8 @@ de validación incluida).
 
 ## Qué hace cada prueba
 
-Algunas pruebas usan `parametrize` y se repiten con varios valores: por eso hay 30 funciones
-unitarias pero pytest cuenta 46 casos.
+Algunas pruebas usan `parametrize` y se repiten con varios valores: por eso hay 34 funciones
+unitarias pero pytest cuenta 54 casos.
 
 ### Unitarias (`tests/unitarias/`)
 
@@ -88,6 +89,13 @@ unitarias pero pytest cuenta 46 casos.
 - `test_rechaza_varias_sentencias_juntas`: `SELECT 1; DELETE ...` se rechaza (evita colar una escritura).
 - `test_rechaza_consultas_que_modifican_datos`: rechaza `DELETE`, `UPDATE` y un `DELETE` escondido en un `WITH`.
 - `test_solo_la_consola_acepta_show_y_explain`: `SHOW` y `EXPLAIN` se permiten solo en la consola.
+
+**`test_configuracion_conexion.py`**: datos de conexión y uso de la clave del `.env`
+- `test_sin_datos_usa_todo_el_env`: sin datos de la pantalla se usa la base y la clave del `.env`.
+- `test_la_clave_escrita_siempre_se_respeta`: si se escribe una contraseña, se usa esa.
+- `test_clave_en_blanco_usa_la_del_env_si_esta_activo_y_es_la_misma_base`: con `PRECARGAR_CONEXION` activo, la clave en blanco usa la del `.env`.
+- `test_clave_en_blanco_no_usa_la_del_env_si_esta_desactivado`: con la opción desactivada, la clave en blanco queda en blanco.
+- `test_la_clave_del_env_nunca_se_envia_a_otra_base`: si cambia el servidor, el puerto, la base o el usuario, la clave del `.env` no se envía.
 
 **`test_traducir_errores.py`**: errores de PostgreSQL convertidos en mensajes claros
 - `test_traduce_un_sqlstate_conocido`: el código `42601` se convierte en "error de sintaxis" (HTTP 400).
@@ -127,6 +135,10 @@ unitarias pero pytest cuenta 46 casos.
 - `test_clave_incorrecta_responde_401`: con una clave mala responde 401 (no autorizado).
 - `test_base_que_no_existe_responde_404`: con una base que no existe responde 404.
 - `test_puerto_sin_servidor_responde_502`: si no hay PostgreSQL en ese puerto responde 502 (servidor inalcanzable).
+- `test_conexion_por_defecto_desactivada_no_entrega_datos`: sin `PRECARGAR_CONEXION`, `/api/conexion-por-defecto` no entrega datos.
+- `test_conexion_por_defecto_activa_entrega_la_base_pero_nunca_la_clave`: con la opción activa entrega la base y el usuario, nunca la contraseña.
+- `test_con_precarga_entra_con_la_clave_en_blanco`: con la opción activa se conecta con la clave en blanco.
+- `test_sin_precarga_la_clave_en_blanco_responde_401`: sin la opción, la clave en blanco responde 401.
 
 **`test_api_catalogo.py`**: estructura de la base
 - `test_lista_las_7_tablas_de_la_base`: `/api/tablas` devuelve las 7 tablas.
@@ -148,6 +160,7 @@ unitarias pero pytest cuenta 46 casos.
 - `test_ingresa_y_muestra_las_tablas`: llena el formulario, entra y ve las 7 tablas con su cantidad de filas.
 - `test_clave_incorrecta_muestra_el_error`: con una clave mala la pantalla de validación muestra el error.
 - `test_salir_vuelve_a_la_pantalla_de_conexion`: "Salir de la base de datos" vuelve al formulario de ingreso.
+- `test_formulario_precargado_entra_sin_escribir_la_clave`: con `PRECARGAR_CONEXION` el formulario llega lleno y entra sin escribir la contraseña.
 
 **`test_pantallas_navegador.py`**: pantallas que muestran la base
 - `test_abrir_una_tabla_muestra_sus_filas`: al abrir `nation` se ve su vista previa (filas 1–10 de 25, con CHILE).
@@ -158,3 +171,5 @@ unitarias pero pytest cuenta 46 casos.
 - `test_optimizacion_muestra_el_plan_y_la_recomendacion`: analiza una consulta de 4 tablas y muestra el tiempo real, el plan y la recomendación del modelo.
 - `test_prediccion_sugiere_un_indice`: escribe una consulta y la página sugiere el `CREATE INDEX`.
 - `test_consulta_que_modifica_datos_muestra_error`: un `DELETE` muestra el aviso de que solo se permiten consultas de lectura.
+- `test_el_ejemplo_de_optimizacion_funciona_con_la_base`: el botón "Usar ejemplo" de Optimización analiza una consulta real de 4 tablas.
+- `test_el_ejemplo_de_prediccion_sugiere_un_indice`: el botón "Usar ejemplo" de Predicción termina en una sugerencia de `CREATE INDEX`.

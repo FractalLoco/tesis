@@ -73,7 +73,10 @@ cp .env.example .env          # completar las credenciales de solo lectura
 ```
 
 El `.env` (no se sube al repositorio) define la base por defecto, los orígenes permitidos por
-CORS y el puerto. En Linux, `lightgbm` necesita `libgomp1` (`sudo apt install libgomp1`).
+CORS y el puerto. Con `PRECARGAR_CONEXION=true` la pantalla de conexión llega llena con esa base
+y basta con apretar **Ingresar**: la contraseña se toma del `.env` y nunca viaja al navegador ni se
+envía a otro servidor. Es para trabajar en local; en un servidor público conviene dejarlo en `false`.
+En Linux, `lightgbm` necesita `libgomp1` (`sudo apt install libgomp1`).
 
 **¿No tienes una base para probar?** `sql/base_de_prueba.sql` crea una con el esquema tipo
 TPC-H del modelo (7 tablas, ~150 mil filas) y `sql/usuario_solo_lectura.sql` crea el usuario
@@ -81,13 +84,13 @@ de solo lectura. Los pasos están en [`docs/pruebas.md`](docs/pruebas.md#2-crear
 
 ## Pruebas
 
-**69 pruebas** con `pytest`, separadas por tipo:
+**84 pruebas** con `pytest`, separadas por tipo:
 
 | Tipo | Carpeta | Cantidad | Qué prueba |
 |---|---|---:|---|
-| Unitarias | `tests/unitarias/` | 46 | Funciones sueltas: reglas de solo lectura, errores, lectura del plan, modelo, orden de JOIN, rutas |
-| Integración (backend) | `tests/integracion/` | 14 | La API contra un PostgreSQL real: conexión, catálogo, diagrama, índices, análisis, estadísticas |
-| E2E (frontend) | `tests/e2e/` | 9 | Un navegador (Playwright) usa la app: ingreso, tablas, índices, diagrama, optimización, predicción |
+| Unitarias | `tests/unitarias/` | 54 | Funciones sueltas: reglas de solo lectura, datos de conexión, errores, lectura del plan, modelo, orden de JOIN, rutas |
+| Integración (backend) | `tests/integracion/` | 18 | La API contra un PostgreSQL real: conexión, precarga, catálogo, diagrama, índices, análisis, estadísticas |
+| E2E (frontend) | `tests/e2e/` | 12 | Un navegador (Playwright) usa la app: ingreso, precarga, tablas, índices, diagrama, optimización, predicción |
 
 ```bash
 .venv/bin/python -m pytest                                    # todas
@@ -193,6 +196,11 @@ frontend/js/
   predicción de índices y estadísticas).
 - **E2E del frontend**: 9 pruebas con Playwright que recorren las pantallas; con `--headed` se
   ven en una ventana maximizada y con pausas para seguirlas.
+- **Conexión precargada**: con `PRECARGAR_CONEXION=true` la pantalla de conexión llega llena con la
+  base del `.env`. Además, la contraseña del `.env` ya no se envía nunca a un servidor distinto al
+  configurado (antes, una clave en blanco hacia otro host usaba la del `.env`).
+- **Ejemplos que funcionan**: "Usar ejemplo" en Optimización y Predicción usa el esquema tipo TPC-H
+  del proyecto (con una base real) o las tablas de ejemplo (en modo demo).
 - **Base de prueba reproducible**: `sql/base_de_prueba.sql` y la guía `docs/pruebas.md` para
   preparar cualquier computador.
 
