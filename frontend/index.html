@@ -17,17 +17,22 @@
 <body>
   <!-- Navbar: se muestra solo en las rutas internas. Cada enlace es una ruta. -->
   <nav id="navbar" class="navbar hidden">
-    <span class="nav-brand"><span class="logo sm">ML·SQL</span> Optimizador SQL</span>
-    <a class="nav-item" href="/tablas">Datos de la tabla</a>
-    <a class="nav-item" href="/estadisticas">Estadísticas SQL</a>
-    <a class="nav-item" href="/diagrama">Diagrama de tablas</a>
-    <a class="nav-item" href="/optimizacion">Optimización de consulta</a>
-    <a class="nav-item" href="/prediccion">Predicción de índice</a>
-    <button id="btn-refrescar" class="nav-refrescar" type="button" title="Volver a cargar los datos de esta sección">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
-      <span>Refrescar</span>
-    </button>
-    <a id="nav-salir" class="nav-item nav-salir" href="/conexion">Salir de la base de datos</a>
+    <span class="nav-brand"><span class="logo sm">ML·SQL</span> <span class="nav-brand-texto">Optimizador SQL</span></span>
+    <div class="nav-enlaces">
+      <a class="nav-item" href="/tablas">Datos de la tabla</a>
+      <a class="nav-item" href="/estadisticas">Estadísticas SQL</a>
+      <a class="nav-item" href="/diagrama">Diagrama de tablas</a>
+      <a class="nav-item" href="/optimizacion">Optimización de consulta</a>
+      <a class="nav-item" href="/prediccion">Predicción de índice</a>
+    </div>
+    <!-- Refrescar y Salir quedan siempre arriba a la derecha, aunque la pantalla sea chica -->
+    <div class="nav-acciones">
+      <button id="btn-refrescar" class="nav-refrescar" type="button" title="Volver a cargar los datos de esta sección">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+        <span>Refrescar</span>
+      </button>
+      <a id="nav-salir" class="nav-item nav-salir" href="/conexion">Salir de la base de datos</a>
+    </div>
   </nav>
 
   <!-- Contenedor único: el router pinta aquí la ruta actual -->

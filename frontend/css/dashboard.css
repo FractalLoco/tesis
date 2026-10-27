@@ -120,21 +120,35 @@ table.data td{max-width:260px;overflow:hidden;text-overflow:ellipsis}
 
 /* ===== Router: contenedor y navbar con enlaces ===== */
 .app-container{min-height:100vh}
-.navbar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:var(--surface);
+.navbar{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"marca enlaces acciones";
+  align-items:start;column-gap:4px;background:var(--surface);
   border-bottom:1px solid var(--line);padding:0 16px;position:sticky;top:0;z-index:15}
+.navbar .nav-brand{grid-area:marca}
+.navbar .nav-enlaces{grid-area:enlaces;display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.navbar .nav-acciones{grid-area:acciones;display:flex;align-items:center;gap:6px;padding:7px 0;white-space:nowrap}
 .navbar .nav-brand{font-weight:700;display:flex;align-items:center;gap:8px;margin-right:14px;padding:12px 0}
 .navbar a.nav-item{text-decoration:none;color:var(--text);font-weight:600;font-size:.92rem;
   padding:14px 13px;border-bottom:3px solid transparent}
 .navbar a.nav-item:hover{background:var(--surface-2)}
 .navbar a.nav-item.active{color:var(--accent);border-bottom-color:var(--accent)}
-.navbar .nav-refrescar{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--surface-2);
+.navbar .nav-refrescar{display:flex;align-items:center;gap:7px;background:var(--surface-2);
   border:1px solid var(--line);color:var(--text);padding:7px 12px;font-size:.85rem;font-weight:600}
 .navbar .nav-refrescar:hover{background:#e8eefc;border-color:#bfd0fb;color:var(--accent)}
 .navbar .nav-refrescar svg{width:16px;height:16px}
 .navbar .nav-refrescar.girando svg{animation:girar .8s linear infinite}
 .navbar .nav-refrescar:disabled{cursor:progress;opacity:.85}
-.navbar a.nav-salir{margin-left:6px;color:#b91c1c;font-weight:600}
+.navbar a.nav-salir{color:#b91c1c;font-weight:600;padding:7px 12px;border-bottom:0;border-radius:8px}
 .navbar a.nav-salir:hover{background:#fef2f2}
+/* Si no cabe todo en una fila (~1440px): marca y botones arriba, los enlaces abajo */
+@media(max-width:1440px){
+  .navbar{grid-template-columns:1fr auto;grid-template-areas:"marca acciones" "enlaces enlaces"}
+  .navbar .nav-enlaces{border-top:1px solid var(--line)}
+  .navbar .nav-enlaces a.nav-item{padding:10px 11px}
+}
+@media(max-width:520px){
+  .navbar .nav-refrescar span,.navbar .nav-brand-texto{display:none}
+  .navbar .nav-enlaces{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap}
+}
 /* Cuando el navbar está visible, el contenido interno lleva su propio padding */
 #navbar:not(.hidden) + #app{max-width:1000px;margin:0 auto;padding:20px 22px}
 #navbar:not(.hidden) + #app.ancho{max-width:1320px}
