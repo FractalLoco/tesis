@@ -1,131 +1,201 @@
 # Optimización de consultas SQL en PostgreSQL con Machine Learning
 
-**Tema de investigación:** la **optimización de consultas SQL** en PostgreSQL,
-apoyando al optimizador del motor con modelos de **Machine Learning supervisado**
-para la selección del orden de los JOIN y la recomendación de índices, mediante un
-analizador externo y desacoplado.
+[![CI](https://github.com/FractalLoco/tesis/actions/workflows/ci.yml/badge.svg)](https://github.com/FractalLoco/tesis/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
+![LightGBM](https://img.shields.io/badge/ML-LightGBM-9ACD32)
+![Licencia MIT](https://img.shields.io/badge/licencia-MIT-green)
+
+Sistema **externo y desacoplado** que apoya al optimizador de PostgreSQL con modelos de
+**Machine Learning supervisado**: recomienda el **orden de los JOIN**, sugiere **índices** y
+muestra el **rendimiento** de la base. Se conecta en **solo lectura**: no modifica datos ni
+el motor, y todo el cálculo ocurre en su propio servidor.
+
+> Proyecto de **investigación con desarrollo de software** · Taller de Desarrollo ·
+> Ingeniería de Ejecución en Computación e Informática · Universidad del Bío-Bío.
+
+---
+
+## Contenido
+
+- [Qué hace](#qué-hace)
+- [Arquitectura](#arquitectura)
+- [Puesta en marcha](#puesta-en-marcha)
+- [Pruebas](#pruebas)
+- [Modelo de Machine Learning](#modelo-de-machine-learning)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Forma de trabajo](#forma-de-trabajo)
+- [Novedades](#novedades)
+
+---
+
+## Qué hace
+
+| Pantalla | Ruta | Para qué sirve |
+|---|---|---|
+| Conexión | `/conexion` | Ingresar host, puerto, base, usuario y clave de PostgreSQL |
+| Validación | `/validando` | Revisa paso a paso la conexión, el catálogo, los índices y los permisos |
+| Datos de la tabla | `/tablas` | Lista las tablas y muestra una vista previa de cada una, por partes |
+| Índices | `/indices` | Todos los índices de la base, con su tamaño y uso |
+| Diagrama de tablas | `/diagrama` | Tablas, relaciones (claves foráneas) e índices conectados |
+| Estadísticas SQL | `/estadisticas` | Monitoreo en vivo: tiempo de respuesta, caché, conexiones |
+| Optimización de consulta | `/optimizacion` | Plan real (`EXPLAIN ANALYZE`) y orden de JOIN recomendado por el modelo |
+| Predicción de índice | `/prediccion` | Sugiere índices (`CREATE INDEX`) a partir del plan estimado |
+
+Solo se aceptan consultas de lectura (`SELECT`, `WITH`, …) de una sola sentencia: cualquier
+`INSERT`, `UPDATE`, `DELETE` o DDL se rechaza antes de llegar a la base.
+
+## Arquitectura
+
+```
+ Navegador                    Servidor de análisis (este proyecto)            Base objetivo
+┌────────────┐   HTTP   ┌──────────────────────────────────────────┐  solo   ┌────────────┐
+│  frontend  │ ───────▶ │ backend (FastAPI) ─▶ analizador ─▶ modelo │ ──────▶ │ PostgreSQL │
+│  (JS, SPA) │ ◀─────── │   rutas /api/...     EXPLAIN,      ML    │ lectura │            │
+└────────────┘          │                      catálogo            │ ◀────── └────────────┘
+                        └──────────────────────────────────────────┘
+```
+
+- La base objetivo solo atiende lecturas livianas (catálogo y `EXPLAIN`): no ejecuta nada del
+  análisis ni del modelo.
+- Un solo proceso sirve la API (`/api/...`) y el frontend, detrás de un único puerto.
+
+## Puesta en marcha
+
+Requisitos: **Python 3.12+** y un **PostgreSQL** al que conectarse.
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env          # completar las credenciales de solo lectura
+.venv/bin/python iniciar.py   # abre http://localhost:8000
+```
+
+El `.env` (no se sube al repositorio) define la base por defecto, los orígenes permitidos por
+CORS y el puerto. En Linux, `lightgbm` necesita `libgomp1` (`sudo apt install libgomp1`).
+
+**¿No tienes una base para probar?** `sql/base_de_prueba.sql` crea una con el esquema tipo
+TPC-H del modelo (7 tablas, ~150 mil filas) y `sql/usuario_solo_lectura.sql` crea el usuario
+de solo lectura. Los pasos están en [`docs/pruebas.md`](docs/pruebas.md#2-crear-la-base-de-prueba-para-integración-y-e2e).
+
+## Pruebas
+
+**69 pruebas** con `pytest`, separadas por tipo:
+
+| Tipo | Carpeta | Cantidad | Qué prueba |
+|---|---|---:|---|
+| Unitarias | `tests/unitarias/` | 46 | Funciones sueltas: reglas de solo lectura, errores, lectura del plan, modelo, orden de JOIN, rutas |
+| Integración (backend) | `tests/integracion/` | 14 | La API contra un PostgreSQL real: conexión, catálogo, diagrama, índices, análisis, estadísticas |
+| E2E (frontend) | `tests/e2e/` | 9 | Un navegador (Playwright) usa la app: ingreso, tablas, índices, diagrama, optimización, predicción |
+
+```bash
+.venv/bin/python -m pytest                                    # todas
+.venv/bin/python -m pytest tests/unitarias -v                 # solo un tipo
+.venv/bin/python -m pytest tests/e2e -v --headed --slowmo 700 # viendo el navegador
+```
+
+Con `--headed` la ventana se abre maximizada, queda **20 segundos** abierta después de ingresar
+y cargar la base, y unos segundos más al terminar cada prueba. Las de integración y E2E se
+**omiten** si no hay base de prueba, así que en GitHub Actions corren las unitarias.
+Detalle completo en [`docs/pruebas.md`](docs/pruebas.md).
+
+## Modelo de Machine Learning
+
+En **Optimización de consulta**, además del plan real (`EXPLAIN ANALYZE`), el backend pide varios
+planes **estimados** de la misma consulta (`EXPLAIN`, sin ejecutarla), cambiando la configuración
+del planificador con `SET LOCAL` en una transacción de solo lectura (`join_collapse_limit` y
+`enable_hashjoin` / `enable_mergejoin` / `enable_nestloop`). El modelo estima el tiempo de cada
+plan y se muestra el actual, el mejor y la mejora estimada.
+
+| Archivo en `ml/` | Qué es |
+|---|---|
+| `modelo_regresion.pkl` | LightGBM que estima el tiempo de un plan (ms) a partir de 24 características del `EXPLAIN`. Lo usa la app |
+| `modelo_ranking.pkl` | LightGBM que ordena planes (LambdaMART). Guardado para más adelante |
+| `features.json` | Nombres y orden de las características que espera el modelo |
+| `modelo_join_order_colab.ipynb` | Notebook de Google Colab que genera los datos, entrena y exporta los modelos |
+
+- Aplica a consultas con **INNER JOIN de 3 a 5 tablas** (el rango con que se entrenó); con 6 o
+  más muestra un aviso. Con LEFT/RIGHT/FULL JOIN, subconsultas, CTE o 1–2 tablas no aplica y el
+  resto del análisis sigue igual. Se decide leyendo el plan, no el texto SQL.
+- Si faltan los archivos de `ml/` o las librerías (`lightgbm`, `scikit-learn`, `joblib`), la app
+  funciona igual, sin el bloque del modelo.
+- Es un **prototipo** entrenado con un esquema sintético tipo TPC-H: en otras bases la estimación
+  es orientativa hasta reentrenarlo con los benchmarks reales.
 
 ## Estructura del proyecto
 
 ```
 tesis/
-├── analizador/    Conexión de solo lectura a PostgreSQL y captura de datos
-├── ml/            Modelo de Machine Learning entrenado (orden de JOIN) y su notebook
-├── backend/       API (FastAPI) que orquesta el analizador y sirve el frontend
-├── frontend/      Interfaz web (HTML/CSS/JS por módulos)
-├── sql/           Scripts SQL de apoyo
-├── data/          Datasets generados (ignorado por git)
-├── tests/         Pruebas
-├── docs/          Documentación (propuesta)
-└── .github/       Integración continua (GitHub Actions)
+├── analizador/          Capa de solo lectura sobre el PostgreSQL objetivo
+│   ├── conexion.py          conexión de solo lectura (la usan ambas partes)
+│   ├── pagina/              datos que muestran las pantallas
+│   │   ├── catalogo.py          tablas y vista previa
+│   │   ├── indices.py           índices de la base
+│   │   ├── diagrama.py          tablas y relaciones
+│   │   ├── estadisticas.py      monitoreo en vivo
+│   │   └── consola.py           ejecución de consultas de lectura
+│   └── analisis/            análisis de consultas
+│       ├── explain.py           captura de planes (EXPLAIN / EXPLAIN ANALYZE)
+│       ├── plan_parser.py       lectura y recorrido del plan
+│       ├── recomendador.py      recomendador heurístico de índices
+│       ├── modelo.py            carga el modelo de ml/ y estima el tiempo de un plan
+│       └── orden_join.py        variantes del plan + modelo
+├── backend/             API en FastAPI: rutas (api/), esquemas (models/) y lógica (services/)
+├── frontend/            Interfaz web en módulos, sin framework (ver abajo)
+├── ml/                  Modelos entrenados y notebook de Colab
+├── sql/                 Base de prueba y usuario de solo lectura
+├── tests/               unitarias/ · integracion/ · e2e/
+├── docs/                Propuesta de titulación y guía de pruebas
+├── data/                Datasets generados (no versionados)
+└── .github/             Integración continua (lint + pruebas en cada push y PR)
 ```
 
-## Qué contiene cada carpeta (por el momento)
+### Frontend por rutas
 
-- **`analizador/`** — capa de solo lectura sobre el PostgreSQL objetivo, en dos partes:
-  ```
-  analizador/
-  ├── conexion.py        conexión de solo lectura (la usan ambas partes)
-  ├── pagina/            datos que muestran las pantallas
-  │   ├── catalogo.py        tablas y vista previa (Datos de la tabla)
-  │   ├── indices.py         índices de la base (Índices)
-  │   ├── diagrama.py        tablas y relaciones (Diagrama de tablas)
-  │   ├── estadisticas.py    monitoreo en vivo (Estadísticas SQL)
-  │   └── consola.py         ejecución de consultas de lectura
-  └── analisis/          análisis de consultas
-      ├── explain.py         captura de planes (EXPLAIN / EXPLAIN ANALYZE)
-      ├── plan_parser.py     lectura y recorrido del plan
-      ├── recomendador.py    recomendador heurístico de índices (Predicción de índice)
-      ├── modelo.py          carga el modelo de ml/ y estima el tiempo de un plan
-      └── orden_join.py      variantes del plan + modelo (Optimización de consulta)
-  ```
-- **`ml/`** — modelo de Machine Learning entrenado en Google Colab:
-  - `modelo_regresion.pkl`: LightGBM que estima el tiempo de un plan (ms) a partir de su
-    plan estimado (`EXPLAIN`). Es el que usa la pantalla "Optimización de consulta".
-  - `modelo_ranking.pkl`: LightGBM que ordena planes (LambdaMART). Guardado para más adelante;
-    hoy no se usa.
-  - `features.json`: nombres y orden de las características que espera el modelo.
-  - `modelo_join_order_colab.ipynb`: notebook que genera los datos, entrena y exporta los modelos.
-- **`backend/`** — servidor API en FastAPI que coordina el analizador y sirve el frontend;
-  rutas separadas por dominio, esquemas de datos y servicios.
-- **`frontend/`** — interfaz web en módulos: ingreso de datos de la base,
-  explorador de tablas, índices, diagrama de relaciones y estadísticas de la base de datos.
-- **`sql/`** — scripts SQL (por ejemplo, creación del usuario de solo lectura).
-- **`data/`** — datasets generados durante el trabajo (no versionados).
-- **`tests/`** — pruebas del proyecto.
-- **`docs/`** — documentación, incluida la propuesta de titulación.
-- **`.github/`** — flujo de integración continua (CI).
-
-## Configuración (.env)
-
-El proyecto incluye un archivo `.env.example`. Para que funcione, cópialo como
-`.env` y cambia las credenciales por las de tu base de datos:
-
-```bash
-cp .env.example .env
-```
-
-## Modelo de Machine Learning (orden de JOIN)
-
-En "Optimización de consulta", además del plan real (`EXPLAIN ANALYZE`), el backend pide
-varios planes **estimados** de la misma consulta (`EXPLAIN`, sin ejecutarla), cambiando la
-configuración del planificador con `SET LOCAL` en una transacción de solo lectura
-(`join_collapse_limit` y `enable_hashjoin` / `enable_mergejoin` / `enable_nestloop`). El modelo
-estima el tiempo de cada plan y se muestra el actual, el mejor y la mejora estimada.
-
-- Aplica a consultas con INNER JOIN de 3 a 5 tablas (el rango con que se entrenó); con 6 o más
-  se muestra un aviso. Con LEFT/RIGHT/FULL JOIN, subconsultas, CTE o 1–2 tablas no aplica, y el
-  resto del análisis sigue igual. Se decide leyendo el plan, no el texto SQL.
-- Si faltan los archivos de `ml/` o las librerías (`lightgbm`, `scikit-learn`, `joblib`), la app
-  funciona igual, sin el bloque del modelo. En Linux, `lightgbm` necesita la librería del
-  sistema `libgomp1` (`sudo apt install libgomp1`).
-- Es un prototipo entrenado con un esquema sintético tipo TPC-H: en otras bases la estimación es
-  orientativa hasta reentrenarlo con los benchmarks reales.
-
-## Licencia
-
-Distribuido bajo licencia **MIT**. Ver el archivo [`LICENSE`](LICENSE).
-
----
-
-> Proyecto de **investigación** desarrollado para la asignatura **Taller de Desarrollo**,
-> carrera de Ingeniería de Ejecución en Computación e Informática, Universidad del Bío-Bío.
-
-## Frontend por rutas (SPA con router)
-
-Cada pantalla es una **ruta separada** con su propio módulo (buenas prácticas, sin
-framework ni build):
+Cada pantalla es una **ruta separada** con su propio módulo (sin framework ni build):
 
 ```
 frontend/js/
-  main.js              arranca el router
-  core/
-    router.js          mapea cada URL (/ruta, History API) a su módulo y protege las rutas
-    api.js             todas las llamadas al backend
-    session.js         credenciales en memoria (no se guardan en el navegador)
-    util.js, demo.js, pestanas.js, indices-info.js, historial.js
-  routes/
-    conexion.js        /conexion      (ingresar datos de la base)
-    validando.js       /validando     (validación paso a paso con ticks)
-    tablas.js          /tablas        (Datos de la tabla · pestaña Tablas)
-    indices.js         /indices       (Datos de la tabla · pestaña Índices, separada de las tablas)
-    diagrama/          /diagrama      (diagrama de tablas, relaciones e índices conectados)
-      index.js         entrada de la ruta: pantalla, carga de datos y controles
-      estado.js        estado compartido y medidas del dibujo
-      layout.js        posiciones de tablas e índices (capas y orden de cada capa)
-      dibujo.js        SVG de tablas, índices y relaciones; selección
-      zoom.js          zoom y "Ajustar"
-    estadisticas.js    /estadisticas  (monitoreo en vivo)
-    optimizacion.js    /optimizacion  (plan de ejecución EXPLAIN ANALYZE + historial)
-    prediccion.js      /prediccion    (recomendación heurística de índices + historial)
-    no-disponible.js   pantalla 404 genérica (hoy ninguna ruta la usa)
+├── main.js              arranca el router
+├── core/
+│   ├── router.js            mapea cada URL a su módulo y protege las rutas
+│   ├── api.js               todas las llamadas al backend
+│   ├── session.js           credenciales en memoria (no se guardan en el navegador)
+│   └── util.js, demo.js, pestanas.js, indices-info.js, historial.js
+└── routes/
+    ├── conexion.js, validando.js, tablas.js, indices.js
+    ├── diagrama/            index.js, estado.js, layout.js, dibujo.js, zoom.js
+    ├── estadisticas.js, optimizacion.js, prediccion.js
+    └── no-disponible.js     pantalla 404 genérica
 ```
 
-`historial.js` guarda en `localStorage` las consultas analizadas en `/optimizacion`
-y `/prediccion`, separadas por base de datos (nunca se guarda la contraseña).
+- Las URLs son limpias (`/tablas`, `/diagrama`, sin `#`). El backend devuelve `index.html` para
+  cualquier ruta de pantalla, así que se pueden refrescar o abrir directamente; `/api/...` y los
+  archivos estáticos inexistentes dan 404.
+- El router protege las rutas: sin conexión activa redirige a `/conexion`.
+- `historial.js` guarda en `localStorage` las consultas de `/optimizacion` y `/prediccion`,
+  separadas por base de datos (nunca la contraseña).
 
-El router protege las rutas: si no hay conexión activa, redirige a `/conexion`.
+## Forma de trabajo
 
-Las URLs son limpias (`/tablas`, `/diagrama`, sin `#`). El backend devuelve
-`index.html` para cualquier ruta de pantalla, así que se pueden refrescar o abrir
-directamente; `/api/...` y los archivos estáticos inexistentes siguen dando 404.
+- **GitHub Flow**: una rama corta por cambio desde `main` (`feat/`, `fix/`, `test/`, `docs/`,
+  `refactor/`), Pull Request y fusión cuando pasa el CI.
+- **Conventional Commits**: `tipo: descripción en imperativo`. Detalle en
+  [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## Novedades
+
+- **Pruebas por tipo**: `tests/` se separó en unitarias, integración y E2E, con nombres más
+  claros y comentarios.
+- **Integración del backend**: 14 pruebas de la API contra PostgreSQL real (conexión y sus
+  errores 401/404/502, tablas, vista previa, diagrama, índices, consola, análisis con el modelo,
+  predicción de índices y estadísticas).
+- **E2E del frontend**: 9 pruebas con Playwright que recorren las pantallas; con `--headed` se
+  ven en una ventana maximizada y con pausas para seguirlas.
+- **Base de prueba reproducible**: `sql/base_de_prueba.sql` y la guía `docs/pruebas.md` para
+  preparar cualquier computador.
+
+## Licencia
+
+Distribuido bajo licencia **MIT**. Ver [`LICENSE`](LICENSE).

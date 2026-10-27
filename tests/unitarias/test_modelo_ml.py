@@ -1,3 +1,8 @@
+# Pruebas del modelo de Machine Learning (analizador/analisis/modelo.py).
+# El modelo recibe un plan de EXPLAIN, lo convierte en 24 números (features)
+# y predice cuántos milisegundos tardaría. Aquí se revisa que esas features se
+# calculen igual que en el notebook de entrenamiento: si no, el modelo recibiría
+# datos distintos a los que aprendió y sus predicciones no servirían.
 import json
 from pathlib import Path
 
@@ -5,8 +10,9 @@ import pytest
 
 from analizador.analisis import modelo
 
-ML = Path(__file__).resolve().parent.parent / "ml"
+ML = Path(__file__).resolve().parents[2] / "ml"   # carpeta ml/ en la raíz del repo
 
+# Ayudas para escribir planes a mano, con la misma forma que los de EXPLAIN.
 def nodo(tipo, hijos=(), **campos):
     return {"Node Type": tipo, "Total Cost": 10.0, "Startup Cost": 1.0, "Plan Rows": 100,
             "Plan Width": 8, **campos, "Plans": list(hijos)}
@@ -35,7 +41,8 @@ def extraer_features_del_notebook():
     exec(fuente.split("registros = []")[0], espacio)
     return espacio["extraer_features"]
 
-def test_features_tienen_exactamente_las_columnas_de_features_json():
+def test_features_en_el_mismo_orden_que_features_json():
+    # features.json guarda el orden de columnas con que se entrenó el modelo.
     esperadas = json.loads((ML / "features.json").read_text(encoding="utf-8"))
     assert list(modelo.extraer_features(PLAN_4, 4)) == esperadas
 
@@ -44,7 +51,7 @@ def test_features_iguales_a_las_del_notebook(plan, n_tablas):
     del_notebook = extraer_features_del_notebook()
     assert modelo.extraer_features(plan, n_tablas) == del_notebook(plan[0]["Plan"], n_tablas)
 
-def test_conteos_del_plan():
+def test_cuenta_bien_los_nodos_del_plan():
     f = modelo.extraer_features(PLAN_4, 4)
     assert (f["n_Seq Scan"], f["n_Hash Join"], f["n_Hash"], f["n_Aggregate"]) == (4, 3, 3, 1)
     assert (f["n_nodos"], f["prof_max"], f["n_scans"]) == (11, 5, 4)
@@ -55,7 +62,9 @@ def test_predice_milisegundos_positivos():
     ms = modelo.predecir_ms(PLAN_4, 4)
     assert isinstance(ms, float) and ms >= 0
 
-def test_sin_archivos_queda_no_disponible(monkeypatch, tmp_path):
+def test_sin_archivo_del_modelo_queda_no_disponible(monkeypatch, tmp_path):
+    # monkeypatch cambia algo solo durante esta prueba: aquí apunta el modelo
+    # a un archivo que no existe, como si faltara ml/modelo_regresion.pkl.
     monkeypatch.setattr(modelo, "ARCHIVO_MODELO", tmp_path / "no_existe.pkl")
     modelo._cargar.cache_clear()
     try:
