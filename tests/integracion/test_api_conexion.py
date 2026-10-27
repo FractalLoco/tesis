@@ -5,6 +5,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from analizador import conexion
 from backend.main import app
 from tests.base_de_prueba import CONEXION, hay_base
 
@@ -37,3 +38,28 @@ def test_puerto_sin_servidor_responde_502():
     r = cliente.post("/api/conectar", json={**CONEXION, "port": "1"})
     assert r.status_code == 502                       # 502 = no se pudo llegar al servidor
     assert r.json()["codigo"] == "servidor_inalcanzable"
+
+# --- Precarga de la conexión (PRECARGAR_CONEXION en el .env) ---
+# monkeypatch activa o desactiva la opción solo durante la prueba.
+
+def test_conexion_por_defecto_desactivada_no_entrega_datos(monkeypatch):
+    monkeypatch.setattr(conexion, "PRECARGAR_CONEXION", False)
+    assert cliente.get("/api/conexion-por-defecto").json() == {"precargar": False}
+
+def test_conexion_por_defecto_activa_entrega_la_base_pero_nunca_la_clave(monkeypatch):
+    monkeypatch.setattr(conexion, "PRECARGAR_CONEXION", True)
+    datos = cliente.get("/api/conexion-por-defecto").json()
+    assert datos["precargar"] is True
+    assert (datos["dbname"], datos["user"]) == (CONEXION["dbname"], CONEXION["user"])
+    assert datos["clave_guardada"] is True
+    assert "password" not in datos and CONEXION["password"] not in str(datos)
+
+def test_con_precarga_entra_con_la_clave_en_blanco(monkeypatch):
+    monkeypatch.setattr(conexion, "PRECARGAR_CONEXION", True)
+    r = cliente.post("/api/conectar", json={**CONEXION, "password": ""})
+    assert r.status_code == 200 and r.json()["ok"] is True
+
+def test_sin_precarga_la_clave_en_blanco_responde_401(monkeypatch):
+    monkeypatch.setattr(conexion, "PRECARGAR_CONEXION", False)
+    r = cliente.post("/api/conectar", json={**CONEXION, "password": ""})
+    assert r.status_code == 401
