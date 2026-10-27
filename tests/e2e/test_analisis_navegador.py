@@ -33,3 +33,17 @@ def test_consulta_que_modifica_datos_muestra_error(conectado: Page):
     conectado.fill("#op-sql", "DELETE FROM nation")
     conectado.click("#op-ejecutar")
     expect(conectado.locator("#op-error")).to_contain_text("Solo se permiten consultas de lectura", timeout=15000)
+
+def test_el_ejemplo_de_optimizacion_funciona_con_la_base(conectado: Page):
+    ir_a(conectado, "Optimización de consulta")
+    conectado.get_by_role("button", name="Usar ejemplo").click()
+    conectado.click("#op-ejecutar")
+    resultado = conectado.locator("#op-resultado")
+    expect(resultado).to_contain_text("Tiempo real", timeout=20000)
+    expect(resultado).to_contain_text("Mejor tiempo estimado")   # el ejemplo tiene 4 tablas: aplica el modelo
+
+def test_el_ejemplo_de_prediccion_sugiere_un_indice(conectado: Page):
+    ir_a(conectado, "Predicción de índice")
+    conectado.get_by_role("button", name="Usar ejemplo").click()
+    conectado.click("#pi-ejecutar")
+    expect(conectado.locator("#pi-resultado")).to_contain_text("CREATE INDEX", timeout=15000)
