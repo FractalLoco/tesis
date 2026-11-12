@@ -5,7 +5,7 @@ Las pruebas se corren con **pytest** desde la raíz del repositorio y están sep
 | Carpeta | Tipo | Qué prueba | Necesita |
 |---|---|---|---|
 | `tests/unitarias/` | Unitarias | Funciones sueltas del analizador y el backend (69) | Nada más que Python |
-| `tests/integracion/` | Integración (backend) | La API conectada a un PostgreSQL real (22) | Base de prueba + `.env` |
+| `tests/integracion/` | Integración (backend) | La API conectada a un PostgreSQL real (23) | Base de prueba + `.env` |
 | `tests/e2e/` | E2E (frontend) | Un navegador usa la aplicación completa (13) | Base de prueba + `.env` + Playwright |
 
 Si falta la base de prueba, las de integración y E2E se **omiten** (no fallan). Así pasa en
@@ -188,6 +188,7 @@ unitarias pero pytest cuenta 69 casos.
 - `test_v2_propone_indice_en_la_columna_del_filtro_sin_indice`: propone `o_totalprice` y no las columnas que ya tienen índice o son clave primaria.
 - `test_v2_rechaza_consultas_que_modifican_datos`: un `DELETE` responde 403.
 - `test_v3_elige_indices_y_plan_en_la_gemela_sin_tocar_el_servidor`: arma la gemela, planifica igual que el servidor y en el servidor siguen los mismos 16 índices. Necesita `GEMELA_DSN`; si no está, se omite.
+- `test_el_usuario_de_solo_lectura_ve_las_claves_primarias`: con el usuario de solo lectura del `.env` se leen las claves primarias (antes no se veían y la gemela quedaba sin sus índices).
 - `test_estadisticas_de_la_base`: `/api/estadisticas` devuelve conexiones y el porcentaje de caché.
 
 ### E2E del frontend (`tests/e2e/`)

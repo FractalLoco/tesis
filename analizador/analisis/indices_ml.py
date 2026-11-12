@@ -38,6 +38,12 @@ ARCHIVO_PARAMETROS = DIR_ML / "parametros_v2_v3.json"
 AYUDA = 0.10
 # Tablas chicas: se leen enteras en un instante, un índice no cambia nada.
 MIN_FILAS = 1000
+# Claves primarias desde pg_index: information_schema.table_constraints no se las
+# muestra a un usuario que solo puede leer (como analizador_ro).
+SQL_CLAVES_PRIMARIAS = ("SELECT c.relname, a.attname FROM pg_index x "
+                        "JOIN pg_class c ON c.oid = x.indrelid "
+                        "JOIN pg_attribute a ON a.attrelid = x.indrelid AND a.attnum = ANY(x.indkey) "
+                        "WHERE x.indisprimary AND c.relnamespace = 'public'::regnamespace")
 
 class ModelosNoDisponibles(RuntimeError):
     pass
@@ -146,10 +152,7 @@ def leer_estadisticas(conn, tablas) -> tuple[dict, dict, dict]:
             filas = T.get(t, {"filas": 1.0})["filas"]
             distintos = -nd * filas if nd < 0 else nd
             C[(t, c)] = {"distintos": min(1.0, distintos / filas), "correlacion": abs(corr or 0), "ancho": ancho}
-        cur.execute("SELECT tc.table_name, kcu.column_name FROM information_schema.table_constraints tc "
-                    "JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tc.constraint_name "
-                    "AND kcu.table_schema = tc.table_schema "
-                    "WHERE tc.table_schema = 'public' AND tc.constraint_type = 'PRIMARY KEY'")
+        cur.execute(SQL_CLAVES_PRIMARIAS)
         claves = {}
         for t, c in cur.fetchall():
             claves.setdefault(t, set()).add(c)

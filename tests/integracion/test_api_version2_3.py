@@ -40,3 +40,10 @@ def test_v3_elige_indices_y_plan_en_la_gemela_sin_tocar_el_servidor():
     # En el servidor no aparece ningún índice nuevo ni HypoPG.
     indices = cliente.post("/api/indices", json={"conexion": CONEXION}).json()["indices"]
     assert len({i["indice"] for i in indices}) == 16
+
+def test_el_usuario_de_solo_lectura_ve_las_claves_primarias():
+    # Sin las claves, la gemela se arma sin sus índices y planifica distinto que el servidor.
+    from analizador.conexion import get_readonly_connection
+    with get_readonly_connection(CONEXION) as conn:
+        claves = gemela.leer_servidor(conn)["claves"]
+    assert claves["orders"] == ["o_orderkey"] and claves["customer"] == ["c_custkey"]

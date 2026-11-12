@@ -47,10 +47,7 @@ def leer_servidor(conn) -> dict:
         columnas = {}
         for t, c, tipo in cur.fetchall():
             columnas.setdefault(t, []).append((c, tipo))
-        cur.execute("SELECT tc.table_name, kcu.column_name FROM information_schema.table_constraints tc "
-                    "JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tc.constraint_name "
-                    "AND kcu.table_schema = tc.table_schema "
-                    "WHERE tc.table_schema = 'public' AND tc.constraint_type = 'PRIMARY KEY'")
+        cur.execute(indices_ml.SQL_CLAVES_PRIMARIAS)
         claves = {}
         for t, c in cur.fetchall():
             claves.setdefault(t, []).append(c)

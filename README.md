@@ -96,12 +96,12 @@ de solo lectura. Los pasos están en [`docs/pruebas.md`](docs/pruebas.md#2-crear
 
 ## Pruebas
 
-**104 pruebas** con `pytest`, separadas por tipo:
+**105 pruebas** con `pytest`, separadas por tipo:
 
 | Tipo | Carpeta | Cantidad | Qué prueba |
 |---|---|---:|---|
 | Unitarias | `tests/unitarias/` | 69 | Funciones sueltas: reglas de solo lectura, datos de conexión, errores, lectura del plan, modelo, orden de JOIN, rutas, recomendador de índices, notebook V1/V2/V3, V2 y V3 en la app |
-| Integración (backend) | `tests/integracion/` | 22 | La API contra un PostgreSQL real: conexión, precarga, catálogo, diagrama, índices, análisis, estadísticas |
+| Integración (backend) | `tests/integracion/` | 23 | La API contra un PostgreSQL real: conexión, precarga, catálogo, diagrama, índices, análisis, estadísticas |
 | E2E (frontend) | `tests/e2e/` | 13 | Un navegador (Playwright) usa la app: ingreso, precarga, tablas, índices, diagrama, optimización, predicción |
 
 ```bash
