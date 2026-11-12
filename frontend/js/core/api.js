@@ -49,5 +49,7 @@ export const estadisticas = () => post("/estadisticas", { conexion: obtener() })
 export const listarIndices = () => post("/indices", { conexion: obtener() });
 export const obtenerDiagrama = () => post("/diagrama", { conexion: obtener() });
 export const predecirIndices = (query) => post("/prediccion-indices", { conexion: obtener(), query });
+export const version2 = (query) => post("/version2", { conexion: obtener(), query });
+export const version3 = (query, reconstruir = false) => post("/version3", { conexion: obtener(), query, reconstruir });
 
 export const health = () => pedir("/health");

@@ -113,5 +113,5 @@ export const prediccionDemo = (query) => ({
       motivos: ["Filtro sobre pedidos.cliente_id revisa ~6.000 filas sin índice (Seq Scan)."],
       sql_sugerido: "CREATE INDEX idx_pedidos_cliente_id ON pedidos (cliente_id);" },
   ],
-  nota: "Sugerencias heurísticas a partir del plan estimado (EXPLAIN). La recomendación por Machine Learning llegará más adelante.",
+  nota: "Sugerencias por reglas a partir del plan estimado (EXPLAIN): columnas usadas en filtros, uniones u ordenamientos que no tienen índice.",
 });
