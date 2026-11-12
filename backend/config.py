@@ -35,3 +35,7 @@ CORS_ORIGINS = [
 
 # Puerto en que iniciar.py levanta el servidor.
 PUERTO = int(os.getenv("PUERTO", "8000"))
+
+# Conexión a un PostgreSQL propio de la app (con HypoPG) donde se arma la base
+# gemela de la V3. Vacío = la V3 no está disponible.
+GEMELA_DSN = os.getenv("GEMELA_DSN", "")

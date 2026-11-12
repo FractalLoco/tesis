@@ -103,10 +103,32 @@ def _describir(plan, ajustes: dict) -> str:
     partes.append("configuración: " + ("; ".join(cambios) if cambios else "la de PostgreSQL por defecto"))
     return " · ".join(partes)
 
+def _cambios(ajustes: dict) -> list[str]:
+    """Solo lo que difiere de la configuración por defecto, como SET LOCAL."""
+    salida = []
+    if ajustes.get("join_collapse_limit") == 1:
+        salida.append("SET LOCAL join_collapse_limit = 1;")
+    salida += [f"SET LOCAL {m} = off;" for m in METODOS if ajustes.get(m) is False]
+    return salida
+
+def sql_optimizado(query: str, ajustes: dict | None = None, indices: list[str] | tuple = ()) -> str:
+    """SQL listo para copiar y pegar: los índices recomendados y la consulta con la
+    configuración del plan elegido. SET LOCAL vale solo dentro de esa transacción."""
+    consulta = query.strip().rstrip(";").strip() + ";"
+    cambios = _cambios(ajustes or {})
+    partes = []
+    if indices:
+        partes += ["-- Índices recomendados (se crean una sola vez)", *indices, ""]
+    if cambios:
+        partes += ["-- Consulta con el plan recomendado", "BEGIN;", *cambios, consulta, "COMMIT;"]
+    else:
+        partes += ["-- Consulta (no necesita cambios de configuración)", consulta]
+    return "\n".join(partes)
+
 def _resultado(**campos) -> dict:
     base = {"disponible": True, "aplica": False, "motivo": None, "aviso": None, "n_tablas": None,
             "tiempo_actual_ms": None, "tiempo_mejor_ms": None, "mejora_pct": None,
-            "descripcion": None, "mejor_es_actual": None, "variantes_evaluadas": 0}
+            "descripcion": None, "mejor_es_actual": None, "variantes_evaluadas": 0, "ajustes": {}}
     base.update(campos)
     return base
 
@@ -144,6 +166,7 @@ def evaluar_variantes(explicar) -> dict:
         mejor_es_actual=plan_mejor is actual,
         descripcion=_describir(plan_mejor, ajustes_mejor),
         variantes_evaluadas=len(vistas),
+        ajustes=ajustes_mejor,
     )
 
 def _explain(conn, query: str, ajustes: dict) -> dict:
@@ -167,4 +190,5 @@ def recomendar_orden_join(query: str, config: dict | None = None) -> dict:
         return _resultado(disponible=False)
     with get_readonly_connection(config) as conn:
         conn.commit()   # deja fijo el "solo lectura" de la conexión antes de las variantes
-        return evaluar_variantes(lambda ajustes: _explain(conn, query, ajustes))
+        r = evaluar_variantes(lambda ajustes: _explain(conn, query, ajustes))
+    return {**r, "sql_optimizado": sql_optimizado(query, r["ajustes"])}

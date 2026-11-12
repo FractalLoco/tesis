@@ -18,8 +18,16 @@ def test_optimizacion_muestra_el_plan_y_la_recomendacion(conectado: Page):
     # EXPLAIN ANALYZE ejecutó la consulta: se muestran el tiempo real y el plan.
     expect(resultado).to_contain_text("Tiempo real", timeout=20000)
     expect(resultado).to_contain_text("Plan de ejecución")
+    # La consulta optimizada lista para copiar y el plan explicado en pasos.
+    expect(resultado).to_contain_text("Consulta optimizada")
+    expect(conectado.locator("#op-opt")).to_contain_text("SELECT count(*)")
+    expect(resultado).to_contain_text("Lo que más demora es el paso")
     # Bloque del modelo de ML con el orden de JOIN recomendado.
     expect(resultado).to_contain_text("Mejor tiempo estimado")
+    # V1, V2 y V3 en filas desplegables; la V2 se calcula sola y deja de decir "calculando".
+    expect(resultado).to_contain_text("Índices recomendados por el modelo")
+    expect(resultado).to_contain_text("Índices y plan juntos (base gemela)")
+    expect(conectado.locator("#v2-res")).not_to_have_text("calculando…", timeout=15000)
 
 def test_prediccion_sugiere_un_indice(conectado: Page):
     ir_a(conectado, "Predicción de índice")
@@ -47,3 +55,12 @@ def test_el_ejemplo_de_prediccion_sugiere_un_indice(conectado: Page):
     conectado.get_by_role("button", name="Usar ejemplo").click()
     conectado.click("#pi-ejecutar")
     expect(conectado.locator("#pi-resultado")).to_contain_text("CREATE INDEX", timeout=15000)
+
+def test_prediccion_sin_escribir_usa_el_ejemplo(conectado: Page):
+    ir_a(conectado, "Predicción de índice")
+    conectado.click("#pi-ejecutar")
+    expect(conectado.locator("#pi-copiar")).to_contain_text("CREATE INDEX", timeout=15000)
+    expect(conectado.locator("#pi-sql")).not_to_have_value("")
+    # Es una tabla de opciones: al desmarcar el índice, el bloque para copiar queda vacío.
+    conectado.locator(".pi-marca").first.uncheck()
+    expect(conectado.locator("#pi-copiar")).to_contain_text("Marca al menos un índice")

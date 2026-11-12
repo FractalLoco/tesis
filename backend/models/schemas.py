@@ -51,3 +51,8 @@ class AnalizarIn(Entrada):
 class PrediccionIn(Entrada):
     conexion: Conexion
     query: str = Field(max_length=MAX_LARGO_SQL)
+
+class Version3In(Entrada):
+    conexion: Conexion
+    query: str = Field(max_length=MAX_LARGO_SQL)
+    reconstruir: bool = False

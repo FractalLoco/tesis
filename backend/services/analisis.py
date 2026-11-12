@@ -1,5 +1,6 @@
 import logging
 
+from analizador.analisis import gemela, indices_ml
 from analizador.analisis.explain import get_plan
 from analizador.analisis.orden_join import recomendar_orden_join
 from analizador.analisis.plan_parser import parse_plan
@@ -37,3 +38,11 @@ def _recomendacion_ml(query: str, config: dict | None) -> dict:
 def recomendar_indices(query: str, config: dict | None = None) -> dict:
 
     return recomendar(validar_consulta(query), config)
+
+def recomendar_version2(query: str, config: dict | None = None) -> dict:
+
+    return indices_ml.recomendar(validar_consulta(query), config)
+
+def recomendar_version3(query: str, config: dict | None = None, reconstruir: bool = False) -> dict:
+
+    return gemela.recomendar(validar_consulta(query), config, reconstruir)

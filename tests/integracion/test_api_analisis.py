@@ -45,6 +45,12 @@ def test_prediccion_sugiere_indice_para_un_filtro_sin_indice():
     sugerencias = [x["sql_sugerido"] for x in r.json()["recomendaciones"]]
     assert "CREATE INDEX idx_orders_o_totalprice ON orders (o_totalprice);" in sugerencias
 
+def test_prediccion_sugiere_indice_para_un_order_by_sin_indice():
+    r = cliente.post("/api/prediccion-indices", json={**BODY, "query": "SELECT * FROM orders ORDER BY o_totalprice DESC LIMIT 10"})
+    assert r.status_code == 200
+    sugerencias = [x["sql_sugerido"] for x in r.json()["recomendaciones"]]
+    assert sugerencias == ["CREATE INDEX idx_orders_o_totalprice ON orders (o_totalprice);"]
+
 def test_estadisticas_de_la_base():
     r = cliente.post("/api/estadisticas", json=BODY)
     assert r.status_code == 200

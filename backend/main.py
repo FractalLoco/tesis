@@ -32,6 +32,13 @@ class FrontendSPA(StaticFiles):
     Así se puede refrescar o abrir directamente cualquier ruta sin un 404."""
 
     async def get_response(self, path, scope):
+        respuesta = await self._buscar(path, scope)
+        # El navegador debe preguntar si cambió antes de usar su copia (responde 304
+        # si no): si no, después de actualizar el servidor seguiría con el JS viejo.
+        respuesta.headers["Cache-Control"] = "no-cache"
+        return respuesta
+
+    async def _buscar(self, path, scope):
         try:
             return await super().get_response(path, scope)
         except StarletteHTTPException as exc:

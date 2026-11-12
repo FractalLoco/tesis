@@ -40,7 +40,7 @@ el motor, y todo el cálculo ocurre en su propio servidor.
 | Índices | `/indices` | Todos los índices de la base, con su tamaño y uso |
 | Diagrama de tablas | `/diagrama` | Tablas, relaciones (claves foráneas) e índices conectados |
 | Estadísticas SQL | `/estadisticas` | Monitoreo en vivo: tiempo de respuesta, caché, conexiones |
-| Optimización de consulta | `/optimizacion` | Plan real (`EXPLAIN ANALYZE`) y orden de JOIN recomendado por el modelo |
+| Optimización de consulta | `/optimizacion` | Plan real (`EXPLAIN ANALYZE`) y las tres versiones del modelo en filas desplegables: V1 (plan), V2 (índices) y V3 (índices y plan juntos) |
 | Predicción de índice | `/prediccion` | Sugiere índices (`CREATE INDEX`) a partir del plan estimado |
 
 Solo se aceptan consultas de lectura (`SELECT`, `WITH`, …) de una sola sentencia: cualquier
@@ -78,19 +78,31 @@ y basta con apretar **Ingresar**: la contraseña se toma del `.env` y nunca viaj
 envía a otro servidor. Es para trabajar en local; en un servidor público conviene dejarlo en `false`.
 En Linux, `lightgbm` necesita `libgomp1` (`sudo apt install libgomp1`).
 
+**Para la V3** hace falta un PostgreSQL **propio de la aplicación** (no el de la base objetivo) con
+HypoPG, donde se arma la base gemela. En el mismo equipo de la app, por ejemplo:
+
+```bash
+sudo apt install postgresql-17-hypopg
+sudo -u postgres psql -d template1 -c "CREATE EXTENSION hypopg"   # así cada base nueva ya la trae
+sudo -u postgres createuser --createdb gemela   # y ponerle clave con \password gemela
+```
+
+y en el `.env`: `GEMELA_DSN=host=localhost dbname=postgres user=gemela password=...`. Sin
+`GEMELA_DSN` la V3 aparece como "no disponible" y el resto funciona igual.
+
 **¿No tienes una base para probar?** `sql/base_de_prueba.sql` crea una con el esquema tipo
 TPC-H del modelo (7 tablas, ~150 mil filas) y `sql/usuario_solo_lectura.sql` crea el usuario
 de solo lectura. Los pasos están en [`docs/pruebas.md`](docs/pruebas.md#2-crear-la-base-de-prueba-para-integración-y-e2e).
 
 ## Pruebas
 
-**84 pruebas** con `pytest`, separadas por tipo:
+**105 pruebas** con `pytest`, separadas por tipo:
 
 | Tipo | Carpeta | Cantidad | Qué prueba |
 |---|---|---:|---|
-| Unitarias | `tests/unitarias/` | 54 | Funciones sueltas: reglas de solo lectura, datos de conexión, errores, lectura del plan, modelo, orden de JOIN, rutas |
-| Integración (backend) | `tests/integracion/` | 18 | La API contra un PostgreSQL real: conexión, precarga, catálogo, diagrama, índices, análisis, estadísticas |
-| E2E (frontend) | `tests/e2e/` | 12 | Un navegador (Playwright) usa la app: ingreso, precarga, tablas, índices, diagrama, optimización, predicción |
+| Unitarias | `tests/unitarias/` | 69 | Funciones sueltas: reglas de solo lectura, datos de conexión, errores, lectura del plan, modelo, orden de JOIN, rutas, recomendador de índices, notebook V1/V2/V3, V2 y V3 en la app |
+| Integración (backend) | `tests/integracion/` | 23 | La API contra un PostgreSQL real: conexión, precarga, catálogo, diagrama, índices, análisis, estadísticas |
+| E2E (frontend) | `tests/e2e/` | 13 | Un navegador (Playwright) usa la app: ingreso, precarga, tablas, índices, diagrama, optimización, predicción |
 
 ```bash
 .venv/bin/python -m pytest                                    # todas
@@ -101,7 +113,8 @@ de solo lectura. Los pasos están en [`docs/pruebas.md`](docs/pruebas.md#2-crear
 Con `--headed` la ventana se abre maximizada, queda **20 segundos** abierta después de ingresar
 y cargar la base, y unos segundos más al terminar cada prueba. Las de integración y E2E se
 **omiten** si no hay base de prueba, así que en GitHub Actions corren las unitarias.
-Detalle completo en [`docs/pruebas.md`](docs/pruebas.md).
+Detalle completo en [`docs/pruebas.md`](docs/pruebas.md). Para correrlas en Google Colab con
+varias bases de distinto tamaño y sesgo está `tests/pruebas_colab.ipynb`.
 
 ## Modelo de Machine Learning
 
@@ -111,16 +124,34 @@ del planificador con `SET LOCAL` en una transacción de solo lectura (`join_coll
 `enable_hashjoin` / `enable_mergejoin` / `enable_nestloop`). El modelo estima el tiempo de cada
 plan y se muestra el actual, el mejor y la mejora estimada.
 
+Los resultados aparecen en tres filas desplegables:
+
+| Versión | Qué decide | Cómo lo hace en la página |
+|---|---|---|
+| **V1** | El plan (orden y métodos de JOIN) | Varias variantes con `SET LOCAL` y `EXPLAIN`; el modelo estima el tiempo de cada una y elige la más rápida |
+| **V2** | Qué índices crear | Busca en el plan las columnas de filtros y uniones sin índice (sin claves primarias ni tablas de menos de 1.000 filas). Con el plan y `pg_stats` arma 10 características por columna y `modelo_indices.pkl` predice cuánto mejora la consulta. Recomienda las que mejoran más de 10 % |
+| **V3** | Índices y plan juntos | Arma una **base gemela** con las mismas estadísticas que la base objetivo, en el PostgreSQL de la app. Ahí prueba los candidatos de la V2 como índices hipotéticos (HypoPG) junto con las variantes del plan, combina los dos modelos con los pesos aprendidos y agrega un índice solo si baja el tiempo más del corte aprendido (10 %) |
+
+Ninguna versión ejecuta la consulta ni crea índices en la base objetivo: entregan el
+`CREATE INDEX` para que el usuario decida. La gemela se reutiliza por un día y se puede volver a
+armar con un botón.
+
 | Archivo en `ml/` | Qué es |
 |---|---|
 | `modelo_regresion.pkl` | LightGBM que estima el tiempo de un plan (ms) a partir de 24 características del `EXPLAIN`. Lo usa la app |
 | `modelo_ranking.pkl` | LightGBM que ordena planes (LambdaMART). Guardado para más adelante |
 | `features.json` | Nombres y orden de las características que espera el modelo |
 | `modelo_join_order_colab.ipynb` | Notebook de Google Colab que genera los datos, entrena y exporta los modelos |
+| `modelo_v3.pkl` | LightGBM de la versión nueva que estima el tiempo de un plan, entrenado con planes con y sin índices. Lo usan la V2 y la V3 |
+| `modelo_indices.pkl` | LightGBM que predice cuánto mejora una consulta con un índice en una columna (V2 y V3) |
+| `parametros_v2_v3.json` | Lo aprendido en validación: umbral, corte y pesos de la combinación, más el orden de las características |
+| `modelo_ml_v1_v2_v3.ipynb` | Notebook de Colab de la versión nueva: 5 bases sintéticas, 300 consultas. V1 elige el plan, V2 recomienda índices, V3 decide índices y plan juntos en una base gemela con HypoPG (solo lectura sobre el servidor). Termina comparando con reglas típicas de una persona |
 
 - Aplica a consultas con **INNER JOIN de 3 a 5 tablas** (el rango con que se entrenó); con 6 o
   más muestra un aviso. Con LEFT/RIGHT/FULL JOIN, subconsultas, CTE o 1–2 tablas no aplica y el
   resto del análisis sigue igual. Se decide leyendo el plan, no el texto SQL.
+- Los tres archivos de la V2 y la V3 los genera el bloque 15 de `modelo_ml_v1_v2_v3.ipynb` (en
+  Colab se descargan solos; se copian a `ml/`).
 - Si faltan los archivos de `ml/` o las librerías (`lightgbm`, `scikit-learn`, `joblib`), la app
   funciona igual, sin el bloque del modelo.
 - Es un **prototipo** entrenado con un esquema sintético tipo TPC-H: en otras bases la estimación

@@ -4,9 +4,9 @@ Las pruebas se corren con **pytest** desde la raíz del repositorio y están sep
 
 | Carpeta | Tipo | Qué prueba | Necesita |
 |---|---|---|---|
-| `tests/unitarias/` | Unitarias | Funciones sueltas del analizador y el backend (54) | Nada más que Python |
-| `tests/integracion/` | Integración (backend) | La API conectada a un PostgreSQL real (18) | Base de prueba + `.env` |
-| `tests/e2e/` | E2E (frontend) | Un navegador usa la aplicación completa (12) | Base de prueba + `.env` + Playwright |
+| `tests/unitarias/` | Unitarias | Funciones sueltas del analizador y el backend (69) | Nada más que Python |
+| `tests/integracion/` | Integración (backend) | La API conectada a un PostgreSQL real (23) | Base de prueba + `.env` |
+| `tests/e2e/` | E2E (frontend) | Un navegador usa la aplicación completa (13) | Base de prueba + `.env` + Playwright |
 
 Si falta la base de prueba, las de integración y E2E se **omiten** (no fallan). Así pasa en
 GitHub Actions, donde solo corren las unitarias.
@@ -73,10 +73,19 @@ Una sola prueba (`archivo::nombre`):
 Las E2E tardan más que el resto porque cada una ingresa a la base desde cero (con la animación
 de validación incluida).
 
+### En Google Colab, con varias bases
+
+`tests/pruebas_colab.ipynb` se sube a Colab y se corre con **Ejecutar todas** (unos 10 minutos).
+Instala PostgreSQL, baja el repo desde GitHub (la rama se elige en `RAMA`) y crea 5 bases con
+el esquema de `sql/base_de_prueba.sql`: la normal, una chica (10 veces menos filas), una grande
+(4 veces más), una sin sesgo y una muy sesgada. Corre las unitarias una vez, las de integración
+en cada base y las E2E en la normal, y termina con una tabla de pasaron / fallaron / omitidas.
+La clave del usuario de solo lectura se genera en la sesión, no hace falta un `.env`.
+
 ## Qué hace cada prueba
 
-Algunas pruebas usan `parametrize` y se repiten con varios valores: por eso hay 34 funciones
-unitarias pero pytest cuenta 54 casos.
+Algunas pruebas usan `parametrize` y se repiten con varios valores: por eso hay 49 funciones
+unitarias pero pytest cuenta 69 casos.
 
 ### Unitarias (`tests/unitarias/`)
 
@@ -122,11 +131,32 @@ unitarias pero pytest cuenta 54 casos.
 - `test_descarta_planes_con_un_metodo_desactivado`: descarta planes con costo inflado artificialmente.
 - `test_si_no_aplica_no_llama_al_modelo`: si la consulta no aplica, no gasta tiempo prediciendo.
 - `test_sin_modelo_no_se_conecta_a_la_base`: sin modelo disponible no hace consultas innecesarias.
+- `test_la_consulta_optimizada_se_puede_copiar_y_pegar`: la consulta optimizada trae los índices y solo los `SET LOCAL` que cambian, dentro de `BEGIN`/`COMMIT`.
 
 **`test_rutas_frontend.py`**: cómo el backend sirve el frontend
 - `test_las_pantallas_devuelven_la_pagina`: `/`, `/conexion`, `/tablas`, `/diagrama` y `/optimizacion` devuelven la página.
 - `test_rutas_de_api_o_archivos_que_no_existen_dan_404`: una ruta de API o un archivo que no existe da 404.
 - `test_los_archivos_js_se_sirven_como_javascript`: los `.js` se entregan con el tipo correcto.
+
+**`test_recomendador_indices.py`**: recomendador de índices por reglas
+- `test_order_by_sin_tabla_adelante_sugiere_indice`: un `ORDER BY o_totalprice` de una sola tabla (sin `orders.` adelante) también sugiere índice.
+- `test_order_by_no_sugiere_si_ya_hay_indice_o_es_una_expresion`: no sugiere si la columna ya tiene índice o si se ordena por una expresión.
+
+**`test_version2_3_app.py`**: la V2 y la V3 dentro de la app, con modelos falsos
+- `test_v2_candidatas_sin_claves_primarias_ni_columnas_con_indice`: solo son candidatas las columnas de filtros y uniones sin índice que no son clave primaria.
+- `test_v2_recomienda_los_indices_que_mejoran_mas_de_10_por_ciento`: recomienda los índices con más de 10 % de mejora predicha; con 5 % los muestra sin recomendarlos.
+- `test_v3_agrega_indices_solo_si_superan_el_corte`: la búsqueda conjunta agrega un índice solo si baja el tiempo combinado más del corte.
+- `test_v3_no_cambia_el_plan_si_la_otra_configuracion_gana_poco`: otra configuración del planificador solo reemplaza al plan por defecto si gana más que el umbral, y la mejora se mide contra el plan por defecto.
+- `test_v3_la_gemela_copia_la_distribucion_de_los_valores_frecuentes`: los datos sintéticos de la gemela respetan las frecuencias de `pg_stats`.
+- `test_v3_sin_base_gemela_configurada_avisa`: sin `GEMELA_DSN` la V3 responde "no disponible" con el motivo.
+
+**`test_modelo_v1_v2_v3.py`**: funciones del notebook `ml/modelo_ml_v1_v2_v3.ipynb`, con datos escritos a mano
+- `test_v1_caracteristicas_iguales_a_las_de_la_app`: el notebook y la app calculan las mismas 24 características.
+- `test_v1_solo_cambia_el_plan_si_la_mejora_supera_el_umbral`: con poca mejora predicha se queda con el plan de PostgreSQL.
+- `test_v2_caracteristicas_de_un_indice_candidato`: las características de un índice candidato salen bien.
+- `test_v2_respeta_el_presupuesto_y_descarta_indices_que_no_ayudan`: no pasa del espacio permitido ni elige índices inútiles.
+- `test_v3_combina_las_opiniones_de_los_dos_modelos_con_los_pesos`: junta los dos modelos con los pesos aprendidos.
+- `test_v3_elige_indices_dentro_del_espacio_y_sobre_el_corte`: elige el índice que más ahorra y descarta el que no cabe o ahorra poco.
 
 ### Integración del backend (`tests/integracion/`)
 
@@ -152,6 +182,13 @@ unitarias pero pytest cuenta 54 casos.
 - `test_la_consola_rechaza_un_delete`: un `DELETE` responde 403 (prohibido).
 - `test_analiza_consulta_de_4_tablas_con_el_modelo`: `/api/analizar` ejecuta `EXPLAIN ANALYZE` y el modelo recomienda un orden de JOIN.
 - `test_prediccion_sugiere_indice_para_un_filtro_sin_indice`: `/api/prediccion-indices` sugiere `CREATE INDEX` para `o_totalprice`.
+- `test_prediccion_sugiere_indice_para_un_order_by_sin_indice`: un `ORDER BY o_totalprice` sin índice también lleva a sugerir `CREATE INDEX`.
+
+**`test_api_version2_3.py`**: `/api/version2` y `/api/version3` (se omiten si faltan los modelos en `ml/`)
+- `test_v2_propone_indice_en_la_columna_del_filtro_sin_indice`: propone `o_totalprice` y no las columnas que ya tienen índice o son clave primaria.
+- `test_v2_rechaza_consultas_que_modifican_datos`: un `DELETE` responde 403.
+- `test_v3_elige_indices_y_plan_en_la_gemela_sin_tocar_el_servidor`: arma la gemela, planifica igual que el servidor y en el servidor siguen los mismos 16 índices. Necesita `GEMELA_DSN`; si no está, se omite.
+- `test_el_usuario_de_solo_lectura_ve_las_claves_primarias`: con el usuario de solo lectura del `.env` se leen las claves primarias (antes no se veían y la gemela quedaba sin sus índices).
 - `test_estadisticas_de_la_base`: `/api/estadisticas` devuelve conexiones y el porcentaje de caché.
 
 ### E2E del frontend (`tests/e2e/`)
@@ -168,8 +205,9 @@ unitarias pero pytest cuenta 54 casos.
 - `test_el_diagrama_muestra_tablas_y_relaciones`: el diagrama dibuja 7 tablas y 7 relaciones.
 
 **`test_analisis_navegador.py`**: pantallas de análisis
-- `test_optimizacion_muestra_el_plan_y_la_recomendacion`: analiza una consulta de 4 tablas y muestra el tiempo real, el plan y la recomendación del modelo.
+- `test_optimizacion_muestra_el_plan_y_la_recomendacion`: analiza una consulta de 4 tablas y muestra el tiempo real, la consulta optimizada para copiar, el plan en pasos y la recomendación del modelo.
 - `test_prediccion_sugiere_un_indice`: escribe una consulta y la página sugiere el `CREATE INDEX`.
 - `test_consulta_que_modifica_datos_muestra_error`: un `DELETE` muestra el aviso de que solo se permiten consultas de lectura.
 - `test_el_ejemplo_de_optimizacion_funciona_con_la_base`: el botón "Usar ejemplo" de Optimización analiza una consulta real de 4 tablas.
 - `test_el_ejemplo_de_prediccion_sugiere_un_indice`: el botón "Usar ejemplo" de Predicción termina en una sugerencia de `CREATE INDEX`.
+- `test_prediccion_sin_escribir_usa_el_ejemplo`: con el cuadro vacío, "Predecir índices" usa el ejemplo y deja el `CREATE INDEX` listo para copiar; al desmarcarlo en la tabla, el bloque se vacía.

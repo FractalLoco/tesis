@@ -33,6 +33,21 @@
 .recom-motivos{margin:0 0 10px;padding-left:18px;font-size:.85rem;color:var(--text)}
 .recom-motivos li{margin-bottom:3px}
 
+/* ===== V1, V2 y V3 en filas desplegables ===== */
+.version{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-bottom:10px}
+.version summary{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;list-style:none}
+.version summary::-webkit-details-marker{display:none}
+.version summary::before{content:"▸";color:var(--muted);transition:transform .18s ease}
+.version[open] summary::before{transform:rotate(90deg)}
+.version summary:hover{background:var(--surface-2);border-radius:10px}
+.ver-tag{font-size:.72rem;font-weight:700;border-radius:6px;padding:2px 8px;background:#ffedd5;color:#c2410c}
+.ver-nombre{font-weight:600;font-size:.9rem}
+.ver-res{margin-left:auto;font-size:.8rem;color:var(--muted);text-align:right}
+.ver-cuerpo{border-top:1px solid var(--line);padding:12px 14px}
+.ver-tabla{margin-top:12px}
+.ver-tabla tr.ver-elegido td{background:#f0fdf4}
+.mini-boton{padding:3px 8px;font-size:.75rem;margin-left:6px}
+
 /* ===== Historial ===== */
 .hist-cab{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px}
 .hist-cab h3{margin:0;font-size:.95rem}
@@ -41,3 +56,34 @@
 .historial-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--muted);margin-bottom:8px}
 .historial-acciones{display:flex;gap:8px}
 .historial-acciones button{padding:5px 10px;font-size:.78rem}
+
+/* ===== Consulta optimizada para copiar ===== */
+.sql-copiar{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 12px;margin-bottom:18px}
+.sql-copiar-cab{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sql-copiar-titulo{font-size:.84rem;font-weight:600;color:var(--text)}
+.sql-copiar .copiar{margin-left:auto;padding:5px 14px;font-size:.8rem}
+.sql-copiar pre{white-space:pre-wrap;word-break:break-word}
+
+/* ===== Plan en pasos simples ===== */
+.veredicto{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:.88rem;margin-bottom:10px}
+.pasos{margin:0 0 14px;padding-left:26px}
+.paso{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:8px;background:var(--surface);
+  padding:9px 12px;margin-bottom:8px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.paso::marker{font-weight:700;color:var(--muted)}
+.paso.lento{border-left-color:var(--danger)}
+.paso-texto{flex:1 1 320px;font-size:.88rem}
+.paso-texto code{font-family:var(--mono);font-size:.8rem;background:var(--surface-2);border-radius:5px;padding:1px 5px}
+.paso-consejo{margin-top:4px;font-size:.8rem;color:#b45309}
+.paso-tiempo{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted);white-space:nowrap}
+.paso.lento .paso-tiempo{color:var(--danger);font-weight:600}
+.paso-barra{display:inline-block;width:90px;height:6px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.paso-barra span{display:block;height:100%;background:var(--accent)}
+.paso.lento .paso-barra span{background:var(--danger)}
+.plan-tecnico{margin-bottom:18px}
+.pill-ok,.pill-no{font-size:.74rem;font-weight:600;border-radius:999px;padding:2px 9px;margin-left:6px}
+.pill-ok{background:#dcfce7;color:#166534}
+.pill-no{background:#f3f4f6;color:#6b7280}
+.recom-item.descartado{opacity:.7}
+.pi-motivo{max-width:320px;font-size:.82rem}
+.pi-sql{font-family:var(--mono);font-size:.76rem;white-space:nowrap}
+.pi-marca{width:16px;height:16px;cursor:pointer}

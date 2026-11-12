@@ -59,6 +59,12 @@ def _recolectar_alias(nodo: dict, alias_tabla: dict) -> None:
     for hijo in nodo.get("Plans", []):
         _recolectar_alias(hijo, alias_tabla)
 
+def _tablas_debajo(nodo: dict) -> set[str]:
+    tablas = {nodo["Relation Name"]} if nodo.get("Relation Name") else set()
+    for hijo in nodo.get("Plans", []):
+        tablas |= _tablas_debajo(hijo)
+    return tablas
+
 def _recorrer(nodo: dict, alias_tabla: dict, sugerencias: dict) -> None:
     tabla = nodo.get("Relation Name")
     filas = nodo.get("Plan Rows", 0) or 0
@@ -85,9 +91,16 @@ def _recorrer(nodo: dict, alias_tabla: dict, sugerencias: dict) -> None:
         if "." in ref:
             al, col = ref.split(".", 1)
             t = alias_tabla.get(al, al)
-            sugerencias.setdefault((t, col), []).append(
-                f"Se ordena por {t}.{col} (ORDER BY); un índice evita el paso de Sort."
-            )
+        else:
+            # Con una sola tabla PostgreSQL escribe la columna sin la tabla
+            # ("o_totalprice DESC"); se toma la única tabla que hay bajo el Sort.
+            tablas = _tablas_debajo(nodo)
+            if len(tablas) != 1 or not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", ref):
+                continue
+            t, col = tablas.pop(), ref
+        sugerencias.setdefault((t, col), []).append(
+            f"Se ordena por {t}.{col} (ORDER BY); un índice evita el paso de Sort."
+        )
 
     for hijo in nodo.get("Plans", []):
         _recorrer(hijo, alias_tabla, sugerencias)
@@ -122,6 +135,6 @@ def recomendar_indices(query: str, config: dict | None = None) -> dict:
         "consulta": query,
         "n_recomendaciones": len(recomendaciones),
         "recomendaciones": recomendaciones,
-        "nota": "Sugerencias heurísticas a partir del plan estimado (EXPLAIN). "
-                "La recomendación por Machine Learning llegará más adelante.",
+        "nota": "Sugerencias por reglas a partir del plan estimado (EXPLAIN): columnas usadas en "
+                "filtros, uniones u ordenamientos que no tienen índice.",
     }

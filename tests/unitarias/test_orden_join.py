@@ -118,3 +118,14 @@ def test_sin_modelo_no_se_conecta_a_la_base(monkeypatch):
     monkeypatch.setattr(modelo, "disponible", lambda: False)
     monkeypatch.setattr(orden_join, "get_readonly_connection", lambda *a: pytest.fail("no debía conectar"))
     assert orden_join.recomendar_orden_join("SELECT 1") == orden_join._resultado(disponible=False)
+
+def test_la_consulta_optimizada_se_puede_copiar_y_pegar():
+    # Sin cambios: la misma consulta, con un solo punto y coma al final.
+    assert orden_join.sql_optimizado("SELECT 1;").endswith("\nSELECT 1;")
+    # Con un plan distinto: solo los ajustes que cambian, dentro de una transacción.
+    sql = orden_join.sql_optimizado("SELECT 1", {"join_collapse_limit": 1, "enable_hashjoin": False,
+                                                  "enable_nestloop": True},
+                                    ["CREATE INDEX idx_t_a ON t (a);"])
+    assert sql.splitlines()[1:] == [
+        "CREATE INDEX idx_t_a ON t (a);", "", "-- Consulta con el plan recomendado", "BEGIN;",
+        "SET LOCAL join_collapse_limit = 1;", "SET LOCAL enable_hashjoin = off;", "SELECT 1;", "COMMIT;"]
