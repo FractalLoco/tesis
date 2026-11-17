@@ -1,12 +1,12 @@
 #!/bin/bash
-# Se ejecuta una sola vez, cuando la base se crea por primera vez (volumen vacío)
+# corre una sola vez, con el volumen vacío
 set -e
 
-# Base de prueba: la misma de sql/base_de_prueba.sql (7 tablas tipo TPC-H)
+# la base de prueba
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "CREATE DATABASE optimizacion"
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d optimizacion -f /sql/base_de_prueba.sql
 
-# Usuario de solo lectura que usa la app (igual que sql/usuario_solo_lectura.sql)
+# usuario de solo lectura para la app
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d optimizacion -v clave="$CLAVE_SOLO_LECTURA" <<'SQL'
 CREATE ROLE analizador_ro LOGIN PASSWORD :'clave';
 GRANT CONNECT ON DATABASE optimizacion TO analizador_ro;
