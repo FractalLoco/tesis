@@ -1,0 +1,52 @@
+# Levanta la app completa: docker compose up --build -d
+# Página en http://localhost:8080 (8080 para no chocar con la app local del 8000)
+# Las claves de aquí son solo para uso local
+
+services:
+
+  # Base de datos: PostgreSQL + HypoPG con la base de prueba ya cargada
+  db:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    environment:
+      POSTGRES_PASSWORD: ${DOCKER_CLAVE_POSTGRES:-postgres_local}
+      CLAVE_SOLO_LECTURA: ${DOCKER_CLAVE_SOLO_LECTURA:-solo_lectura_local}
+    # Los datos quedan en un volumen: no se pierden al apagar el contenedor
+    volumes:
+      - datos_postgres:/var/lib/postgresql/data
+    # Para entrar con psql desde el PC: psql -h localhost -p 5433 -U postgres
+    ports:
+      - "5433:5432"
+    # Queda lista recién cuando terminó de cargar la base de prueba
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres"]
+      interval: 5s
+      retries: 60
+
+  # Aplicación: arranca solo cuando la base está lista
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    # Lo mismo que el .env en local, pero apuntando al contenedor "db"
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: optimizacion
+      DB_USER: analizador_ro
+      DB_PASSWORD: ${DOCKER_CLAVE_SOLO_LECTURA:-solo_lectura_local}
+      PRECARGAR_CONEXION: "true"
+      CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+      # La gemela de la V3 se arma en el mismo PostgreSQL del contenedor
+      GEMELA_DSN: host=db port=5432 dbname=postgres user=postgres password=${DOCKER_CLAVE_POSTGRES:-postgres_local}
+    ports:
+      - "8080:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      retries: 5
+
+volumes:
+  datos_postgres:

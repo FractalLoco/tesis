@@ -1,0 +1,6 @@
+# Los archivos que corren dentro de Linux (contenedores) quedan con saltos de línea
+# de Linux, aunque el repositorio se baje en Windows
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.sql text eol=lf

@@ -94,6 +94,24 @@ y en el `.env`: `GEMELA_DSN=host=localhost dbname=postgres user=gemela password=
 TPC-H del modelo (7 tablas, ~150 mil filas) y `sql/usuario_solo_lectura.sql` crea el usuario
 de solo lectura. Los pasos están en [`docs/pruebas.md`](docs/pruebas.md#2-crear-la-base-de-prueba-para-integración-y-e2e).
 
+### Con Docker
+
+Levanta todo de una vez, sin instalar Python ni PostgreSQL. Son dos contenedores:
+- uno con PostgreSQL 17 + HypoPG, que trae la base de prueba y el usuario de solo lectura ya creados;
+- otro con la aplicación, con la V1, la V2 y la V3 funcionando.
+
+```bash
+docker compose up --build -d   # la primera vez tarda unos minutos (arma las imágenes y la base)
+```
+
+La página queda en http://localhost:8080 y la pantalla de conexión llega llena: basta con
+apretar **Ingresar**.
+
+- Para apagarlo: `docker compose down`.
+- Con `docker compose down -v` también se borra la base; la próxima vez se crea de nuevo.
+- Las claves del `docker-compose.yml` son solo para uso local. Se cambian con
+  `DOCKER_CLAVE_POSTGRES` y `DOCKER_CLAVE_SOLO_LECTURA`.
+
 ## Pruebas
 
 **105 pruebas** con `pytest`, separadas por tipo:
