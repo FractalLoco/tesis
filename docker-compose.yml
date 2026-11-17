@@ -15,9 +15,9 @@ services:
     # Los datos quedan en un volumen: no se pierden al apagar el contenedor
     volumes:
       - datos_postgres:/var/lib/postgresql/data
-    # Para entrar con psql desde el PC: psql -h localhost -p 5433 -U postgres
+    # Solo desde este PC (no desde la red): psql -h localhost -p 5433 -U postgres
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     # Queda lista recién cuando terminó de cargar la base de prueba
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres"]
