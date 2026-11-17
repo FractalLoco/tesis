@@ -104,13 +104,31 @@ Levanta todo de una vez, sin instalar Python ni PostgreSQL. Son dos contenedores
 docker compose up --build -d   # la primera vez tarda unos minutos (arma las imágenes y la base)
 ```
 
-La página queda en http://localhost:8080 y la pantalla de conexión llega llena: basta con
-apretar **Ingresar**.
+La página queda en http://localhost:8020 y la pantalla de conexión llega llena: basta con
+apretar **Ingresar**. Desde otro equipo de la misma red: `http://IP_DE_ESTE_PC:8020`.
+
+En Windows también se puede hacer doble clic en `arrancar_docker.bat`: abre Docker Desktop si
+está cerrado, abre el puerto en el firewall (la primera vez), levanta todo y muestra las direcciones.
 
 - Para apagarlo: `docker compose down`.
 - Con `docker compose down -v` también se borra la base; la próxima vez se crea de nuevo.
-- Las claves del `docker-compose.yml` son solo para uso local. Se cambian con
-  `DOCKER_CLAVE_POSTGRES` y `DOCKER_CLAVE_SOLO_LECTURA`.
+- Los contenedores tienen `restart: unless-stopped`: vuelven solos cuando arranca Docker.
+- Las claves por defecto son solo para uso local. Se cambian en el `.env` (ver `.env.example`).
+
+#### En un servidor
+
+Solo necesita Docker con Compose v2:
+
+```bash
+git clone https://github.com/FractalLoco/tesis.git && cd tesis
+cp .env.example .env    # completar DOCKER_CLAVE_POSTGRES, DOCKER_CLAVE_SOLO_LECTURA y DOCKER_CORS
+docker compose up --build -d
+docker compose ps       # los dos contenedores deben salir "healthy"
+```
+
+La app queda en `http://IP_DEL_SERVIDOR:8020` (el puerto se cambia con `DOCKER_PUERTO`).
+La base solo escucha en `127.0.0.1`, así que no queda expuesta. Para actualizar:
+`git pull && docker compose up --build -d`.
 
 ## Pruebas
 

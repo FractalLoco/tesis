@@ -1,36 +1,37 @@
-# Levanta la app completa: docker compose up --build -d
-# Página en http://localhost:8080 (8080 para no chocar con la app local del 8000)
-# Las claves de aquí son solo para uso local
+# docker compose up --build -d  ->  http://localhost:8020
 
 services:
 
-  # Base de datos: PostgreSQL + HypoPG con la base de prueba ya cargada
+  # la base de datos
   db:
     build:
       context: .
       dockerfile: docker/postgres/Dockerfile
+    container_name: tesis-db
+    restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: ${DOCKER_CLAVE_POSTGRES:-postgres_local}
       CLAVE_SOLO_LECTURA: ${DOCKER_CLAVE_SOLO_LECTURA:-solo_lectura_local}
-    # Los datos quedan en un volumen: no se pierden al apagar el contenedor
+    # los datos no se pierden al apagar
     volumes:
       - datos_postgres:/var/lib/postgresql/data
-    # Solo desde este PC (no desde la red): psql -h localhost -p 5433 -U postgres
+    # solo desde este PC
     ports:
       - "127.0.0.1:5433:5432"
-    # Queda lista recién cuando terminó de cargar la base de prueba
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres"]
       interval: 5s
       retries: 60
 
-  # Aplicación: arranca solo cuando la base está lista
+  # la página y la API
   app:
     build: .
+    container_name: tesis-app
+    restart: unless-stopped
+    # espera a que la base esté lista
     depends_on:
       db:
         condition: service_healthy
-    # Lo mismo que el .env en local, pero apuntando al contenedor "db"
     environment:
       DB_HOST: db
       DB_PORT: "5432"
@@ -38,11 +39,11 @@ services:
       DB_USER: analizador_ro
       DB_PASSWORD: ${DOCKER_CLAVE_SOLO_LECTURA:-solo_lectura_local}
       PRECARGAR_CONEXION: "true"
-      CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
-      # La gemela de la V3 se arma en el mismo PostgreSQL del contenedor
+      CORS_ORIGINS: ${DOCKER_CORS:-http://localhost:8020,http://127.0.0.1:8020}
       GEMELA_DSN: host=db port=5432 dbname=postgres user=postgres password=${DOCKER_CLAVE_POSTGRES:-postgres_local}
+    # afuera 8020 (o DOCKER_PUERTO), adentro 8000
     ports:
-      - "8080:8000"
+      - "${DOCKER_PUERTO:-8020}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 10s
