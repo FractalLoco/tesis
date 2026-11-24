@@ -24,6 +24,7 @@ from analizador.analisis import indices_ml
 from analizador.analisis.orden_join import COSTO_DESACTIVADO, _describir, _variantes, sql_optimizado
 from analizador.analisis.plan_parser import raiz, recorrer
 from analizador.conexion import get_db_config, get_readonly_connection
+from analizador.identificadores import citar
 from backend.config import GEMELA_DSN
 
 log = logging.getLogger("analizador.gemela")
@@ -317,7 +318,10 @@ def recomendar(query: str, config: dict | None = None, reconstruir: bool = False
     actual = planificador.defecto[()]
     mejora = 1 - r["pred_final"] / actual if actual > 0 else 0.0
     indices = [{"tabla": t, "columna": c, "mb": round(v2["mb_por_indice"][(t, c)], 2),
-                "sql_sugerido": f"CREATE INDEX idx_{t}_{c} ON {t} ({c});"} for t, c in r["indices"]]
+                "sql_sugerido": (
+                    f"CREATE INDEX {citar(f'idx_{t}_{c}')} "
+                    f"ON {citar(t)} ({citar(c)});"
+                )} for t, c in r["indices"]]
     return {
         "disponible": True,
         "indices": indices,

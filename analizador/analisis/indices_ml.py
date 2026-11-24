@@ -25,6 +25,7 @@ from analizador.analisis.recomendador import (
     _recolectar_alias,
 )
 from analizador.conexion import get_readonly_connection
+from analizador.identificadores import citar
 from analizador.pagina.indices import listar_todos_indices
 
 log = logging.getLogger("analizador.indices_ml")
@@ -189,7 +190,10 @@ def evaluar(plan, T, C, claves, indices_por_tabla) -> dict:
     filas = [{"tabla": t, "columna": c, "uso": candidatas[(t, c)],
               "mejora_pct": round(100 * mejora[(t, c)], 1), "mb": round(mb[(t, c)], 2),
               "recomendado": (t, c) in elegidos,
-              "sql_sugerido": f"CREATE INDEX idx_{t}_{c} ON {t} ({c});"}
+              "sql_sugerido": (
+                  f"CREATE INDEX {citar(f'idx_{t}_{c}')} "
+                  f"ON {citar(t)} ({citar(c)});"
+              )}
              for t, c in sorted(candidatas, key=lambda k: mejora[k], reverse=True)]
     return {"disponible": True, "n_tablas": n_tablas, "tiempo_actual_ms": round(t_actual, 3),
             "indices_sql": [f["sql_sugerido"] for f in filas if f["recomendado"]],
