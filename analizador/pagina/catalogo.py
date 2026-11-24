@@ -1,6 +1,7 @@
 from psycopg import sql
 
 from analizador.conexion import get_readonly_connection
+from analizador.pagina.texto import a_texto
 
 def listar_tablas(config: dict | None = None) -> list[dict]:
     q = """
@@ -61,10 +62,7 @@ def preview_tabla(esquema: str, tabla: str, limit: int = 50,
                 sql.Identifier(esquema), sql.Identifier(tabla), sql.Literal(limit)
             )
             cur.execute(consulta)
-            filas = [[_to_str(v) for v in fila] for fila in cur.fetchall()]
+            filas = [[a_texto(v) for v in fila] for fila in cur.fetchall()]
 
     indices = listar_indices(esquema, tabla, config)
     return {"columnas": columnas, "filas": filas, "n_filas": len(filas), "indices": indices}
-
-def _to_str(v) -> str:
-    return "" if v is None else str(v)
