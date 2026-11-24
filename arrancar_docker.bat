@@ -28,7 +28,8 @@ if errorlevel 1 (
 )
 :docker_listo
 
-rem levanta la tesis
+rem levanta la tesis, abierta a la red
+set "DOCKER_IP=0.0.0.0"
 echo Levantando la tesis...
 "%DOCKER%" compose up --build -d
 if errorlevel 1 (
