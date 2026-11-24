@@ -8,6 +8,7 @@ ningún DDL; solo devuelve el SQL sugerido para que el usuario lo revise.
 import re
 
 from analizador.analisis.explain import get_plan
+from analizador.identificadores import citar
 from analizador.pagina.indices import listar_todos_indices
 
 UMBRAL_FILAS = 500  # por debajo de esto no vale la pena sugerir un índice
@@ -127,7 +128,10 @@ def recomendar_indices(query: str, config: dict | None = None) -> dict:
             "tabla": tabla,
             "columna": columna,
             "motivos": sorted(set(motivos)),
-            "sql_sugerido": f"CREATE INDEX idx_{tabla}_{columna} ON {tabla} ({columna});",
+            "sql_sugerido": (
+                f"CREATE INDEX {citar(f'idx_{tabla}_{columna}')} "
+                f"ON {citar(tabla)} ({citar(columna)});"
+            ),
         })
     recomendaciones.sort(key=lambda r: (r["tabla"], r["columna"]))
 

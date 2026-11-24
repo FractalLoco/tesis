@@ -25,6 +25,7 @@ from analizador.analisis.recomendador import (
     _recolectar_alias,
 )
 from analizador.conexion import get_readonly_connection
+from analizador.identificadores import citar
 from analizador.pagina.indices import listar_todos_indices
 
 log = logging.getLogger("analizador.indices_ml")
@@ -54,7 +55,15 @@ def cargar():
     try:
         import joblib
         p = json.loads(ARCHIVO_PARAMETROS.read_text(encoding="utf-8"))
+        for ruta in ARCHIVOS.values():
+            ruta_resuelta = ruta.resolve()
+            if ruta.is_symlink() or not ruta.is_file() or ruta_resuelta.parent != DIR_ML.resolve():
+                raise RuntimeError("artefacto ML fuera del directorio ml")
         m_plan, m_indice = joblib.load(ARCHIVOS["plan"]), joblib.load(ARCHIVOS["indice"])
+        esperadas_plan = getattr(m_plan, "n_features_in_", len(p["caracteristicas"]))
+        esperadas_indice = getattr(m_indice, "n_features_in_", len(p["caracteristicas_indice"]))
+        if esperadas_plan != len(p["caracteristicas"]) or esperadas_indice != len(p["caracteristicas_indice"]):
+            raise RuntimeError("número de características del modelo inconsistente")
         _predecir(m_plan, [[0.0] * len(p["caracteristicas"])])
         _predecir(m_indice, [[0.0] * len(p["caracteristicas_indice"])])
     except Exception as exc:
@@ -189,7 +198,10 @@ def evaluar(plan, T, C, claves, indices_por_tabla) -> dict:
     filas = [{"tabla": t, "columna": c, "uso": candidatas[(t, c)],
               "mejora_pct": round(100 * mejora[(t, c)], 1), "mb": round(mb[(t, c)], 2),
               "recomendado": (t, c) in elegidos,
-              "sql_sugerido": f"CREATE INDEX idx_{t}_{c} ON {t} ({c});"}
+              "sql_sugerido": (
+                  f"CREATE INDEX {citar(f'idx_{t}_{c}')} "
+                  f"ON {citar(t)} ({citar(c)});"
+              )}
              for t, c in sorted(candidatas, key=lambda k: mejora[k], reverse=True)]
     return {"disponible": True, "n_tablas": n_tablas, "tiempo_actual_ms": round(t_actual, 3),
             "indices_sql": [f["sql_sugerido"] for f in filas if f["recomendado"]],

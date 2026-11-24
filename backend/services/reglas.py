@@ -20,6 +20,11 @@ _ESCRITURA_EN_CTE = re.compile(
 )
 _DOLAR = re.compile(r"\$([A-Za-z_][A-Za-z0-9_]*)?\$")
 
+# ANALYZE ejecutaría la consulta real; la consola solo admite EXPLAIN sin ese modo.
+_EXPLAIN_ANALYZE = re.compile(
+    r"^\s*EXPLAIN\s+(?:ANALYZE\b|\([^)]*\bANALYZE\b[^)]*\))", re.IGNORECASE
+)
+
 def _sin_literales(sql: str) -> str:
     """Devuelve el SQL sin comentarios, textos entre comillas ni bloques $$...$$,
     para poder buscar ';' y palabras clave sin falsos positivos."""
@@ -76,6 +81,11 @@ def validar_consulta(sql: str, permitidas: tuple[str, ...] = PARA_ANALISIS) -> s
         raise ErrorNegocio("consulta_no_permitida",
                            "La consulta WITH incluye una escritura (INSERT, UPDATE, DELETE o MERGE), "
                            "que no está permitida.",
+                           status=403)
+    if primera == "EXPLAIN" and _EXPLAIN_ANALYZE.search(limpio):
+        raise ErrorNegocio("consulta_no_permitida",
+                           "La consola no ejecuta EXPLAIN ANALYZE porque ejecutaría la consulta. "
+                           "Usa EXPLAIN sin ANALYZE.",
                            status=403)
 
     return sql.rstrip().rstrip(";").rstrip()
