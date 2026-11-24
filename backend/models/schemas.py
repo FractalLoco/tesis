@@ -23,6 +23,28 @@ class Conexion(Entrada):
     # La contraseña se recibe tal cual: un espacio al inicio o al final es válido.
     password: Annotated[str, StringConstraints(strip_whitespace=False, max_length=1024)] = ""
 
+    # Un solo servidor por TCP: sin listas de hosts ni rutas de socket del equipo de la app.
+    @field_validator("host")
+    @classmethod
+    def host_valido(cls, v: str) -> str:
+        if any(c in v for c in ", /") or any(ord(c) < 32 for c in v):
+            raise ValueError("debe ser un solo servidor, sin comas, espacios ni rutas")
+        return v
+
+    @field_validator("dbname", "user")
+    @classmethod
+    def nombre_valido(cls, v: str) -> str:
+        if any(c.isspace() or ord(c) < 32 or c == "\x7f" for c in v):
+            raise ValueError("no puede contener espacios ni caracteres de control")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def password_valida(cls, v: str) -> str:
+        if "\x00" in v:
+            raise ValueError("no puede contener caracteres NUL")
+        return v
+
     @field_validator("port")
     @classmethod
     def puerto_valido(cls, v: str) -> str:

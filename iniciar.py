@@ -14,13 +14,16 @@ def asegurar_dependencias():
         print(">> Instalando dependencias (solo la primera vez)...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", *DEPS])
 
-def iniciar_servidor(puerto):
+def iniciar_servidor(puerto, host):
     # Un solo proceso: FastAPI sirve la API y también el frontend estático
     # (ver backend/main.py), tanto en local como en el servidor de despliegue.
+    # Por defecto escucha solo en localhost: la API no tiene autenticación.
     print(f">> Servidor -> http://localhost:{puerto}")
+    if host not in ("127.0.0.1", "localhost"):
+        print(f">> También escucha en {host}:{puerto} (red local)")
     return subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "backend.main:app",
-         "--host", "0.0.0.0", "--port", str(puerto)],
+         "--host", host, "--port", str(puerto)],
         cwd=RAIZ,
     )
 
@@ -30,8 +33,8 @@ def main():
     print("=" * 48)
     asegurar_dependencias()
     # Se importa después de asegurar las dependencias (config usa python-dotenv).
-    from backend.config import PUERTO
-    servidor = iniciar_servidor(PUERTO)
+    from backend.config import BIND_HOST, PUERTO
+    servidor = iniciar_servidor(PUERTO, BIND_HOST)
     time.sleep(2)
     url = f"http://localhost:{PUERTO}"
     try:

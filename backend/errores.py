@@ -15,6 +15,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from backend.config import MOSTRAR_DETALLE_TECNICO
+
 log = logging.getLogger("backend.errores")
 
 class ErrorNegocio(Exception):
@@ -131,7 +133,8 @@ def registrar_manejadores(app: FastAPI) -> None:
     @app.exception_handler(psycopg.Error)
     async def _postgres(_: Request, exc: psycopg.Error):
         status, codigo, mensaje = traducir_psycopg(exc)
-        return respuesta(status, codigo, mensaje, limpiar_detalle(str(exc)))
+        detalle = limpiar_detalle(str(exc)) if MOSTRAR_DETALLE_TECNICO else None
+        return respuesta(status, codigo, mensaje, detalle)
 
     @app.exception_handler(RequestValidationError)
     async def _validacion(_: Request, exc: RequestValidationError):
