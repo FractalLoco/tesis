@@ -59,6 +59,9 @@ def extraer_features(plan, n_tablas: int) -> dict:
 def _cargar():
     try:
         import joblib
+        ruta = ARCHIVO_MODELO.resolve()
+        if ARCHIVO_MODELO.is_symlink() or not ARCHIVO_MODELO.is_file() or ruta.parent != DIR_ML.resolve():
+            raise RuntimeError("archivo de modelo fuera del directorio ml")
         modelo = joblib.load(ARCHIVO_MODELO)
         nombres = json.loads(ARCHIVO_FEATURES.read_text(encoding="utf-8"))
         # Sin scikit-learn el .pkl carga, pero falla al predecir: se prueba aquí.

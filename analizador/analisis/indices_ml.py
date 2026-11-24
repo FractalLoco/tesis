@@ -55,7 +55,15 @@ def cargar():
     try:
         import joblib
         p = json.loads(ARCHIVO_PARAMETROS.read_text(encoding="utf-8"))
+        for ruta in ARCHIVOS.values():
+            ruta_resuelta = ruta.resolve()
+            if ruta.is_symlink() or not ruta.is_file() or ruta_resuelta.parent != DIR_ML.resolve():
+                raise RuntimeError("artefacto ML fuera del directorio ml")
         m_plan, m_indice = joblib.load(ARCHIVOS["plan"]), joblib.load(ARCHIVOS["indice"])
+        esperadas_plan = getattr(m_plan, "n_features_in_", len(p["caracteristicas"]))
+        esperadas_indice = getattr(m_indice, "n_features_in_", len(p["caracteristicas_indice"]))
+        if esperadas_plan != len(p["caracteristicas"]) or esperadas_indice != len(p["caracteristicas_indice"]):
+            raise RuntimeError("número de características del modelo inconsistente")
         _predecir(m_plan, [[0.0] * len(p["caracteristicas"])])
         _predecir(m_indice, [[0.0] * len(p["caracteristicas_indice"])])
     except Exception as exc:
