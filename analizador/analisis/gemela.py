@@ -13,6 +13,7 @@ pesos aprendidos. Un índice entra solo si baja el tiempo más que el corte.
 """
 import hashlib
 import logging
+import re
 import threading
 import time
 
@@ -73,6 +74,26 @@ def leer_servidor(conn) -> dict:
 NUMERICOS = ("integer", "bigint", "smallint", "numeric", "real", "double precision")
 TEXTO = ("text", "character varying", "character")
 
+# Tipos e índices vienen del servidor analizado y se ejecutan en la gemela: solo se
+# aceptan formas simples (un tipo con o sin precisión; un índice de columnas).
+_TIPO_SEGURO = re.compile(
+    r"^[A-Za-z][A-Za-z0-9_ ]*(?:\(\s*\d+\s*(?:,\s*\d+\s*)?\))?(?:\[\])?$"
+)
+
+_DDL_INDICE = re.compile(
+    r"^CREATE (?:UNIQUE )?INDEX \S+ ON (?:\S+\.)?\S+ USING \w+ "
+    r"\([^()]*\)(?: INCLUDE \([^()]*\))?$",
+    re.IGNORECASE,
+)
+
+def _tipo_seguro(tipo: str) -> str:
+    texto = str(tipo or "")
+    return texto if _TIPO_SEGURO.fullmatch(texto) else "text"
+
+def _ddl_indice_seguro(ddl: str) -> bool:
+    texto = str(ddl or "").strip()
+    return bool(_DDL_INDICE.fullmatch(texto)) and not any(x in texto for x in (";", "--", "/*", "$"))
+
 def a_numero(valores, tipo):
     if tipo == "date":
         return np.array(valores, dtype="datetime64[D]").astype(np.int64).astype(float)
@@ -132,7 +153,7 @@ def _texto(v):
 def nombre_gemela(config: dict) -> str:
     cfg = get_db_config(config)
     clave = f"{cfg['host']}:{cfg['port']}:{cfg['dbname']}"
-    return "gemela_" + hashlib.md5(clave.encode()).hexdigest()[:12]
+    return "gemela_" + hashlib.md5(clave.encode(), usedforsecurity=False).hexdigest()[:12]
 
 def _conectar(base: str | None = None) -> psycopg.Connection:
     return psycopg.connect(GEMELA_DSN, **({"dbname": base} if base else {}), autocommit=True)
@@ -165,8 +186,9 @@ def armar(config: dict | None, nombre: str) -> dict:
             n = info["filas"].get(t, 0)
             una_clave = info["claves"].get(t, [None])[0] if len(info["claves"].get(t, [])) == 1 else None
             ddl = sql.SQL(", ").join(
-                sql.SQL("{} {}{}").format(sql.Identifier(col), sql.SQL(tipo),
-                                         sql.SQL(" PRIMARY KEY" if col == una_clave else ""))
+                sql.SQL("{} {}{}").format(
+                    sql.Identifier(col), sql.SQL(_tipo_seguro(tipo)),
+                    sql.SQL(" PRIMARY KEY" if col == una_clave else ""))
                 for col, tipo in cols)
             c.execute(sql.SQL("CREATE TABLE {} ({})").format(sql.Identifier(t), ddl))
             if not n:
@@ -186,6 +208,9 @@ def armar(config: dict | None, nombre: str) -> dict:
                 for fila in zip(*datos):
                     cp.write_row([_texto(v) for v in fila])
         for ddl in info["indices"]:
+            if not _ddl_indice_seguro(ddl):
+                log.warning("Índice no copiado a la gemela (definición no permitida): %s", ddl)
+                continue
             try:
                 c.execute(ddl)
             except psycopg.Error as exc:
