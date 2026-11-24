@@ -70,3 +70,8 @@ def test_solo_lectura_y_limites_de_tiempo_siguen_despues_de_un_rollback():
         assert conn.execute("SHOW default_transaction_read_only").fetchone()[0] == "on"
         assert conn.execute("SHOW statement_timeout").fetchone()[0] == "30s"
         assert conn.execute("SHOW lock_timeout").fetchone()[0] == "5s"
+
+def test_host_con_lista_o_ruta_de_socket_responde_422():
+    for host in ("a,b", "/var/run/postgresql"):
+        r = cliente.post("/api/conectar", json={**CONEXION, "host": host})
+        assert r.status_code == 422
