@@ -63,3 +63,10 @@ def test_sin_precarga_la_clave_en_blanco_responde_401(monkeypatch):
     monkeypatch.setattr(conexion, "PRECARGAR_CONEXION", False)
     r = cliente.post("/api/conectar", json={**CONEXION, "password": ""})
     assert r.status_code == 401
+
+def test_solo_lectura_y_limites_de_tiempo_siguen_despues_de_un_rollback():
+    with conexion.get_readonly_connection(CONEXION) as conn:
+        conn.rollback()
+        assert conn.execute("SHOW default_transaction_read_only").fetchone()[0] == "on"
+        assert conn.execute("SHOW statement_timeout").fetchone()[0] == "30s"
+        assert conn.execute("SHOW lock_timeout").fetchone()[0] == "5s"
