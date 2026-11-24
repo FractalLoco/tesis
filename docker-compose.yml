@@ -38,12 +38,12 @@ services:
       DB_NAME: optimizacion
       DB_USER: analizador_ro
       DB_PASSWORD: ${DOCKER_CLAVE_SOLO_LECTURA:-solo_lectura_local}
-      PRECARGAR_CONEXION: "true"
+      PRECARGAR_CONEXION: ${DOCKER_PRECARGAR:-true}
       CORS_ORIGINS: ${DOCKER_CORS:-http://localhost:8020,http://127.0.0.1:8020}
       GEMELA_DSN: host=db port=5432 dbname=postgres user=postgres password=${DOCKER_CLAVE_POSTGRES:-postgres_local}
-    # afuera 8020 (o DOCKER_PUERTO), adentro 8000
+    # afuera 8020, adentro 8000; solo este PC salvo DOCKER_IP=0.0.0.0 (red)
     ports:
-      - "${DOCKER_PUERTO:-8020}:8000"
+      - "${DOCKER_IP:-127.0.0.1}:${DOCKER_PUERTO:-8020}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 10s
