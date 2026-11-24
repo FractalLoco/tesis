@@ -8,6 +8,10 @@
 --   psql -d optimizacion -f sql/base_de_prueba.sql
 -- Después crear el usuario de solo lectura con sql/usuario_solo_lectura.sql.
 
+-- Semilla fija: los datos (y las pruebas que dependen del modelo) son
+-- reproducibles en cualquier equipo.
+SELECT setseed(0.42);
+
 CREATE TABLE region  (r_regionkey int PRIMARY KEY, r_name text);
 CREATE TABLE nation  (n_nationkey int PRIMARY KEY, n_name text, n_regionkey int REFERENCES region);
 CREATE TABLE supplier(s_suppkey int PRIMARY KEY, s_name text, s_nationkey int REFERENCES nation);
