@@ -4,8 +4,8 @@ Las pruebas se corren con **pytest** desde la raíz del repositorio y están sep
 
 | Carpeta | Tipo | Qué prueba | Necesita |
 |---|---|---|---|
-| `tests/unitarias/` | Unitarias | Funciones sueltas del analizador y el backend (69) | Nada más que Python |
-| `tests/integracion/` | Integración (backend) | La API conectada a un PostgreSQL real (23) | Base de prueba + `.env` |
+| `tests/unitarias/` | Unitarias | Funciones sueltas del analizador y el backend (88) | Nada más que Python |
+| `tests/integracion/` | Integración (backend) | La API conectada a un PostgreSQL real (25) | Base de prueba + `.env` |
 | `tests/e2e/` | E2E (frontend) | Un navegador usa la aplicación completa (13) | Base de prueba + `.env` + Playwright |
 
 Si falta la base de prueba, las de integración y E2E se **omiten** (no fallan). Así pasa en
@@ -84,8 +84,8 @@ La clave del usuario de solo lectura se genera en la sesión, no hace falta un `
 
 ## Qué hace cada prueba
 
-Algunas pruebas usan `parametrize` y se repiten con varios valores: por eso hay 49 funciones
-unitarias pero pytest cuenta 69 casos.
+Algunas pruebas usan `parametrize` y se repiten con varios valores: por eso hay 60 funciones
+unitarias pero pytest cuenta 88 casos.
 
 ### Unitarias (`tests/unitarias/`)
 
@@ -158,6 +158,19 @@ unitarias pero pytest cuenta 69 casos.
 - `test_v3_combina_las_opiniones_de_los_dos_modelos_con_los_pesos`: junta los dos modelos con los pesos aprendidos.
 - `test_v3_elige_indices_dentro_del_espacio_y_sobre_el_corte`: elige el índice que más ahorra y descarta el que no cabe o ahorra poco.
 
+**`test_seguridad_conexion.py`**: datos de conexión
+- `test_acepta_un_solo_host_valido` / `test_rechaza_listas_espacios_y_sockets`: el servidor de destino es un solo host, sin listas, espacios ni rutas de socket.
+- `test_rechaza_caracteres_nul_y_nombres_malformados`: la base, el usuario y la clave no aceptan caracteres de control.
+
+**`test_seguridad_consultas.py`**: lo que se ejecuta
+- `test_la_consola_rechaza_explain_analyze` / `test_la_consola_acepta_explain_sin_analyze`: la consola no permite `EXPLAIN ANALYZE`, que ejecutaría la consulta.
+- `test_identificadores_normales_no_cambian` / `test_identificadores_especiales_se_citan`: el `CREATE INDEX` sugerido cita los nombres solo cuando hace falta.
+- `test_tipos_peligrosos_se_reemplazan_por_text` / `test_solo_se_copian_indices_simples`: la base gemela no ejecuta tipos ni índices raros copiados del servidor.
+
+**`test_seguridad_respuestas.py`**: lo que se devuelve
+- `test_los_valores_enormes_se_recortan`: un valor gigante se recorta antes de mandarlo al navegador.
+- `test_cabeceras_de_seguridad_y_sin_cache_en_la_api`: las respuestas traen las cabeceras de seguridad y la API no se guarda en caché.
+
 ### Integración del backend (`tests/integracion/`)
 
 **`test_api_conexion.py`**: `/api/conectar`
@@ -169,6 +182,8 @@ unitarias pero pytest cuenta 69 casos.
 - `test_conexion_por_defecto_activa_entrega_la_base_pero_nunca_la_clave`: con la opción activa entrega la base y el usuario, nunca la contraseña.
 - `test_con_precarga_entra_con_la_clave_en_blanco`: con la opción activa se conecta con la clave en blanco.
 - `test_sin_precarga_la_clave_en_blanco_responde_401`: sin la opción, la clave en blanco responde 401.
+- `test_solo_lectura_y_limites_de_tiempo_siguen_despues_de_un_rollback`: el modo solo lectura y los límites de tiempo se mantienen aunque se haga `ROLLBACK`.
+- `test_host_con_lista_o_ruta_de_socket_responde_422`: rechaza una lista de hosts o una ruta de socket como servidor.
 
 **`test_api_catalogo.py`**: estructura de la base
 - `test_lista_las_7_tablas_de_la_base`: `/api/tablas` devuelve las 7 tablas.

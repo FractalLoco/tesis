@@ -22,6 +22,7 @@ el motor, y todo el cálculo ocurre en su propio servidor.
 - [Qué hace](#qué-hace)
 - [Arquitectura](#arquitectura)
 - [Puesta en marcha](#puesta-en-marcha)
+- [Seguridad](#seguridad)
 - [Pruebas](#pruebas)
 - [Modelo de Machine Learning](#modelo-de-machine-learning)
 - [Estructura del proyecto](#estructura-del-proyecto)
@@ -105,10 +106,12 @@ docker compose up --build -d   # la primera vez tarda unos minutos (arma las im�
 ```
 
 La página queda en http://localhost:8020 y la pantalla de conexión llega llena: basta con
-apretar **Ingresar**. Desde otro equipo de la misma red: `http://IP_DE_ESTE_PC:8020`.
+apretar **Ingresar**. Por defecto solo se abre en el mismo equipo; con `DOCKER_IP=0.0.0.0` en el
+`.env` también se abre desde la red: `http://IP_DE_ESTE_PC:8020`.
 
 En Windows también se puede hacer doble clic en `arrancar_docker.bat`: abre Docker Desktop si
-está cerrado, abre el puerto en el firewall (la primera vez), levanta todo y muestra las direcciones.
+está cerrado, abre el puerto en el firewall (la primera vez), levanta todo abierto a la red y
+muestra las direcciones.
 
 - Para apagarlo: `docker compose down`.
 - Con `docker compose down -v` también se borra la base; la próxima vez se crea de nuevo.
@@ -121,7 +124,7 @@ Solo necesita Docker con Compose v2:
 
 ```bash
 git clone https://github.com/FractalLoco/tesis.git && cd tesis
-cp .env.example .env    # completar DOCKER_CLAVE_POSTGRES, DOCKER_CLAVE_SOLO_LECTURA y DOCKER_CORS
+cp .env.example .env    # claves DOCKER_CLAVE_*, DOCKER_CORS, DOCKER_IP=0.0.0.0 y DOCKER_PRECARGAR=false
 docker compose up --build -d
 docker compose ps       # los dos contenedores deben salir "healthy"
 ```
@@ -130,14 +133,33 @@ La app queda en `http://IP_DEL_SERVIDOR:8020` (el puerto se cambia con `DOCKER_P
 La base solo escucha en `127.0.0.1`, así que no queda expuesta. Para actualizar:
 `git pull && docker compose up --build -d`.
 
+## Seguridad
+
+La API no tiene login: está pensada para usarse en el mismo equipo, en una red de confianza o
+por VPN. Las protecciones:
+
+- **Solo lectura**: la consulta se valida antes de ejecutarse (`backend/services/reglas.py`) y la
+  conexión abre en modo solo lectura, con límites de tiempo por consulta y por bloqueo. Se fijan
+  al abrir la sesión, así que un `ROLLBACK` no los quita (`analizador/conexion.py`).
+- **La clave del `.env` nunca sale del servidor**: con la precarga activa solo se usa hacia la
+  misma base del `.env`, y nunca se envía al navegador.
+- **Servidor de destino**: un solo host por TCP; se rechazan listas de hosts y rutas de socket.
+- **Consola**: no admite `EXPLAIN ANALYZE`, porque ejecutaría la consulta.
+- **SQL sugerido**: los nombres de tablas y columnas van citados cuando hace falta.
+- **Base gemela**: de la base analizada solo se copian tipos de columna e índices simples.
+- **Respuestas**: cabeceras de seguridad (CSP, `X-Frame-Options`, `nosniff`), sin caché en la API,
+  valores enormes recortados y, con `MOSTRAR_DETALLE_TECNICO=false`, sin detalles de PostgreSQL.
+- **Exposición**: `iniciar.py` y Docker escuchan solo en el mismo equipo salvo que se indique
+  `BIND_HOST` / `DOCKER_IP`.
+
 ## Pruebas
 
-**105 pruebas** con `pytest`, separadas por tipo:
+**126 pruebas** con `pytest`, separadas por tipo:
 
 | Tipo | Carpeta | Cantidad | Qué prueba |
 |---|---|---:|---|
-| Unitarias | `tests/unitarias/` | 69 | Funciones sueltas: reglas de solo lectura, datos de conexión, errores, lectura del plan, modelo, orden de JOIN, rutas, recomendador de índices, notebook V1/V2/V3, V2 y V3 en la app |
-| Integración (backend) | `tests/integracion/` | 23 | La API contra un PostgreSQL real: conexión, precarga, catálogo, diagrama, índices, análisis, estadísticas |
+| Unitarias | `tests/unitarias/` | 88 | Funciones sueltas: reglas de solo lectura, datos de conexión, errores, lectura del plan, modelo, orden de JOIN, rutas, recomendador de índices, notebook V1/V2/V3, V2 y V3 en la app, protecciones de seguridad |
+| Integración (backend) | `tests/integracion/` | 25 | La API contra un PostgreSQL real: conexión, precarga, catálogo, diagrama, índices, análisis, estadísticas |
 | E2E (frontend) | `tests/e2e/` | 13 | Un navegador (Playwright) usa la app: ingreso, precarga, tablas, índices, diagrama, optimización, predicción |
 
 ```bash
@@ -199,12 +221,14 @@ armar con un botón.
 tesis/
 ├── analizador/          Capa de solo lectura sobre el PostgreSQL objetivo
 │   ├── conexion.py          conexión de solo lectura (la usan ambas partes)
+│   ├── identificadores.py   cita nombres de tablas y columnas en el SQL sugerido
 │   ├── pagina/              datos que muestran las pantallas
 │   │   ├── catalogo.py          tablas y vista previa
 │   │   ├── indices.py           índices de la base
 │   │   ├── diagrama.py          tablas y relaciones
 │   │   ├── estadisticas.py      monitoreo en vivo
-│   │   └── consola.py           ejecución de consultas de lectura
+│   │   ├── consola.py           ejecución de consultas de lectura
+│   │   └── texto.py             valores como texto, recortando los enormes
 │   └── analisis/            análisis de consultas
 │       ├── explain.py           captura de planes (EXPLAIN / EXPLAIN ANALYZE)
 │       ├── plan_parser.py       lectura y recorrido del plan
