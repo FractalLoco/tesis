@@ -114,6 +114,8 @@ está cerrado, abre el puerto en el firewall (la primera vez), levanta todo y mu
 - Con `docker compose down -v` también se borra la base; la próxima vez se crea de nuevo.
 - Los contenedores tienen `restart: unless-stopped`: vuelven solos cuando arranca Docker.
 - Las claves por defecto son solo para uso local. Se cambian en el `.env` (ver `.env.example`).
+- Para conectar la app a una base que corre en el mismo PC fuera de estos contenedores, usa
+  `host.docker.internal` como servidor.
 
 #### En un servidor
 
